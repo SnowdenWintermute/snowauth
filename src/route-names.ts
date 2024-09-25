@@ -1,3 +1,5 @@
 export const ROUTE_NAMES = {
-  AUTH: "auth",
+  USERS: "/users",
+  CREDENTIALS: "/credentials",
+  SESSIONS: "/sessions",
 };

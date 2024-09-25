@@ -3,6 +3,10 @@ dotenv.config();
 import express from "express";
 import WrappedPool from "./database/WrappedPool.js";
 import { pgOptions } from "./database/config.js";
+import { ROUTE_NAMES } from "./route-names.js";
+import registerNewAccountHandler from "./route-handlers/register-new-account.js";
+import { validate } from "./validation/validate.js";
+import { registerUserSchema } from "./validation/register-user-schema.js";
 
 const PORT = 8081;
 const pgConnectionPool = new WrappedPool();
@@ -15,6 +19,7 @@ app.get("/", (req, res) => res.send("You have reached the root route of the snow
 // USEABLE BY ANYONE
 //
 // - registration
+app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), registerNewAccountHandler);
 // app.post("/users", registrationIpRateLimiter, validate(registerUserSchema), registerNewAccountHandler);
 // - account activation
 // router.put("/users", accountActivationHandler);
