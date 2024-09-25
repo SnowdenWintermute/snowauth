@@ -16,7 +16,7 @@ services:
     image: valkey/valkey
     container_name: valkey
     ports:
-      - "6379:6379"
+      - 6379:6379
     volumes:
       - valkey:/data
 volumes:
