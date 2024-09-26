@@ -7,6 +7,7 @@ import { signJwtSymmetric } from "../tokens/index.js";
 import getEnvVariable from "../utils/get-env-variable.js";
 import { valkeyManager } from "../kv-store/client.js";
 import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
+import ProfileRepo from "../database/repos/profiles.js";
 
 export default async function accountCreationRequestHandler(
   req: Request<object, object, UserRegistrationUserInput>,
@@ -16,11 +17,14 @@ export default async function accountCreationRequestHandler(
   const { email } = req.body;
   const existingCredentials = await CredentialsRepo.findOne("emailAddress", email);
 
-  // const existingUsername
-  const usernameOption = null;
-
   if (existingCredentials && existingCredentials.password !== null) {
     return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.EMAIL_IN_USE_OR_UNAVAILABLE, 403)]);
+  }
+
+  let usernameOption = null;
+  if (existingCredentials) {
+    // const existingUsername
+    const profile = await ProfileRepo.findOne("userId", existingCredentials.userId);
   }
 
   const accountActivationPrivateKey = getEnvVariable("ACCOUNT_ACTIVATION_TOKEN_PRIVATE_KEY");

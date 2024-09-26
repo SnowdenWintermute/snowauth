@@ -9,29 +9,30 @@ export type User = {
   updatedAt: number | Date;
 };
 
+const tableName = RESOURCE_NAMES.USERS;
+
 export default class UsersRepo {
   static async findById(id: number): Promise<User | undefined> {
-    const result = await pgPool.query(`SELECT * FROM ${RESOURCE_NAMES.USERS} WHERE id = $1;`, [id]);
+    const result = await pgPool.query(`SELECT * FROM ${tableName} WHERE id = $1;`, [id]);
     if (!result) return undefined;
     const { rows } = result;
     if (rows[0]) return toCamelCase(rows)[0] as unknown as User;
   }
 
   static async insert() {
-    const { rows } = await pgPool.query(format(`INSERT INTO ${RESOURCE_NAMES.USERS} *;`));
+    const { rows } = await pgPool.query(format(`INSERT INTO ${tableName} *;`));
     return toCamelCase(rows)[0] as unknown as User;
   }
 
   static async delete(id: number) {
-    const { rows } = await pgPool.query(
-      `DELETE FROM ${RESOURCE_NAMES.USERS} WHERE id = $1 RETURNING *;`,
-      [id]
-    );
+    const { rows } = await pgPool.query(`DELETE FROM ${tableName} WHERE id = $1 RETURNING *;`, [
+      id,
+    ]);
     return toCamelCase(rows)![0] as unknown as User;
   }
 
   static async count() {
-    const { rows } = await pgPool.query(`SELECT COUNT(*) FROM ${RESOURCE_NAMES.USERS};`);
+    const { rows } = await pgPool.query(`SELECT COUNT(*) FROM ${tableName};`);
     return parseInt(rows[0].count, 10);
   }
 }

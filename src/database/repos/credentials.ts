@@ -17,10 +17,11 @@ export type Credentials = {
 const tableName = RESOURCE_NAMES.CREDENTIALS;
 
 export default class CredentialsRepo {
-  static async findOne(field: keyof Credentials, value: any): Promise<Credentials> {
+  static async findOne(field: keyof Credentials, value: any): Promise<undefined | Credentials> {
     const { rows } = await pgPool.query(
       format(`SELECT * FROM ${tableName} WHERE %I = %L;`, field, value)
     );
+    if (!toCamelCase(rows)[0]) return undefined;
     return toCamelCase(rows)[0] as unknown as Credentials;
   }
 
@@ -41,6 +42,19 @@ export default class CredentialsRepo {
       )
     );
     return toCamelCase(rows)[0] as unknown as Credentials;
+  }
+
+  static async update(credentials: Credentials) {
+    const { id, emailAddress, password } = credentials;
+    const { rows } = await pgPool.query(
+      format(
+        `UPDATE ${RESOURCE_NAMES.USERS} SET email_address = %L, password = %L WHERE id = %L RETURNING *;`,
+        emailAddress.toLowerCase().trim(),
+        password,
+        id
+      )
+    );
+    return toCamelCase(rows)![0] as unknown as Credentials;
   }
 
   static async delete(id: number) {
