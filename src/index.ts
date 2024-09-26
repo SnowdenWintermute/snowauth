@@ -10,11 +10,8 @@ import pgPool from "./database/instantiate-wrapped-pool.js";
 import { valkeyManager } from "./kv-store/client.js";
 
 const PORT = 8081;
-await pgPool.connect(pgOptions);
-
+pgPool.connect(pgOptions);
 await valkeyManager.connect();
-
-console.log("pg connected");
 
 const app = express();
 

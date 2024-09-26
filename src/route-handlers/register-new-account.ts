@@ -5,6 +5,8 @@ import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import CredentialsRepo from "../database/repos/credentials.js";
 import { signJwtSymmetric } from "../tokens/index.js";
 import getEnvVariable from "../utils/get-env-variable.js";
+import { valkeyManager } from "../kv-store/client.js";
+import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 
 export default async function registerNewAccountHandler(
   req: Request<object, object, UserRegistrationUserInput>,
@@ -44,9 +46,10 @@ export default async function registerNewAccountHandler(
     expiresIn: accountActivationSessionExpirationTime,
   });
 
-  // wrappedRedis.context!.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, JSON.stringify({ name, email, password: hashedPassword }), {
-  //   EX: parseInt(process.env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION!, 10),
-  // });
+  valkeyManager.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, email, {
+    EX: parseInt(accountActivationSessionExpirationTime, 10),
+  });
+
   // await sendEmail(email, ACCOUNT_ACTIVATION_SUBJECT, buildAccountActivationText(name, token!), buildAccountActivationHTML(name, token!));
 
   res.status(200).json({});
