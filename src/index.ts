@@ -7,9 +7,13 @@ import registerNewAccountHandler from "./route-handlers/register-new-account.js"
 import { validate } from "./validation/validate.js";
 import { registerUserSchema } from "./validation/register-user-schema.js";
 import pgPool from "./database/instantiate-wrapped-pool.js";
+import { valkeyManager } from "./kv-store/client.js";
 
 const PORT = 8081;
 await pgPool.connect(pgOptions);
+
+await valkeyManager.connect();
+
 console.log("pg connected");
 
 const app = express();
