@@ -18,6 +18,7 @@ const app = express();
 app.get("/", (req, res) => res.send("You have reached the root route of the snowauth server"));
 // USEABLE BY ANYONE
 app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequestHandler);
+
 // app.post("/users", registrationIpRateLimiter, validate(registerUserSchema), registerNewAccountHandler);
 // - account activation
 // router.put("/users", accountActivationHandler);
