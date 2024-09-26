@@ -10,7 +10,7 @@ export function signJwtAsymmetric(payload: Object, key: string, options: SignOpt
   return null;
 }
 
-export const verifyJwtAsymmetric = <T>(token: string, key: string): T | null => {
+export const verifyJwtAsymmetric = <T extends Object>(token: string, key: string): T | null => {
   try {
     const publicKey = Buffer.from(key, "base64").toString("ascii");
     return jwt.verify(token, publicKey) as T;
@@ -19,7 +19,11 @@ export const verifyJwtAsymmetric = <T>(token: string, key: string): T | null => 
   }
 };
 
-export function signJwtSymmetric(payload: Object, key: string, options: SignOptions = {}) {
+export function signJwtSymmetric<T extends Object>(
+  payload: T,
+  key: string,
+  options: SignOptions = {}
+) {
   if (key)
     return jwt.sign(payload, key, {
       ...(options && options),
@@ -27,10 +31,11 @@ export function signJwtSymmetric(payload: Object, key: string, options: SignOpti
     });
   return null;
 }
-export const verifyJwtSymmetric = <T>(token: string, key: string): T | null => {
+
+export function verifyJwtSymmetric<T extends Object>(token: string, key: string): T | null {
   try {
     return jwt.verify(token, key) as T;
   } catch (error) {
     return null;
   }
-};
+}

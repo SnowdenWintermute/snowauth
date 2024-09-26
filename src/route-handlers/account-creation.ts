@@ -9,6 +9,11 @@ import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 
+export type AccountActivationTokenPayload = {
+  email: string;
+  existingUsernameOption: null | string;
+};
+
 export default async function accountCreationRequestHandler(
   req: Request<object, object, UserRegistrationUserInput>,
   res: Response,
@@ -37,15 +42,16 @@ export default async function accountCreationRequestHandler(
   )
     return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
 
-  const accountActivationToken = signJwtSymmetric(
-    { email, existingUsernameOption }, // if they have no username the requesting service's frontend can ask them for one
+  const accountActivationToken = signJwtSymmetric<AccountActivationTokenPayload>(
+    // if they have no username the requesting service's frontend can ask them for one
+    { email, existingUsernameOption },
     accountActivationPrivateKey,
     {
       expiresIn: accountActivationSessionExpirationTime,
     }
   );
 
-  valkeyManager.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, email, {
+  valkeyManager.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, "", {
     EX: parseInt(accountActivationSessionExpirationTime, 10),
   });
 

@@ -1,6 +1,7 @@
 import format from "pg-format";
 import WrappedPool from "../WrappedPool.js";
 import toCamelCase from "../../utils/to-camel-case.js";
+import camelToSnakeCase from "../../utils/camel-to-snake.js";
 
 export interface DataTypesForInsert {
   [columnName: string]: any;
@@ -13,8 +14,9 @@ export class DatabaseRepository<T> {
   ) {}
 
   async findOne(field: keyof T, value: any): Promise<undefined | T> {
+    const snakeCaseField = camelToSnakeCase(field.toString());
     const { rows } = await this.pgPool.query(
-      format(`SELECT * FROM ${this.tableName} WHERE %I = %L;`, field, value)
+      format(`SELECT * FROM ${this.tableName} WHERE %I = %L;`, snakeCaseField, value)
     );
     if (rows[0]) return toCamelCase(rows)[0] as unknown as T;
     return undefined;

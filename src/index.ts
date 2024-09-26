@@ -8,6 +8,8 @@ import { registerUserSchema } from "./validation/register-user-schema.js";
 import pgPool from "./database/instantiate-wrapped-pool.js";
 import { valkeyManager } from "./kv-store/client.js";
 import accountCreationRequestHandler from "./route-handlers/account-creation.js";
+import accountActivationHandler from "./route-handlers/account-activation.js";
+import { accountActivationSchema } from "./validation/account-activation-schema.js";
 
 const PORT = 8081;
 pgPool.connect(pgOptions);
@@ -17,11 +19,12 @@ const app = express();
 
 app.get("/", (req, res) => res.send("You have reached the root route of the snowauth server"));
 // USEABLE BY ANYONE
-app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequestHandler);
-
 // app.post("/users", registrationIpRateLimiter, validate(registerUserSchema), registerNewAccountHandler);
+app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequestHandler);
 // - account activation
 // router.put("/users", accountActivationHandler);
+app.put(ROUTE_NAMES.USERS, validate(accountActivationSchema), accountActivationHandler);
+
 // - login
 // router.post("/sessions", validate(loginSchema), loginHandler);
 // - get change password email
