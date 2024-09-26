@@ -1,16 +1,15 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 import express from "express";
-import WrappedPool from "./database/WrappedPool.js";
 import { pgOptions } from "./database/config.js";
 import { ROUTE_NAMES } from "./route-names.js";
 import registerNewAccountHandler from "./route-handlers/register-new-account.js";
 import { validate } from "./validation/validate.js";
 import { registerUserSchema } from "./validation/register-user-schema.js";
+import pgPool from "./database/instantiate-wrapped-pool.js";
 
 const PORT = 8081;
-const pgConnectionPool = new WrappedPool();
-await pgConnectionPool.connect(pgOptions);
+await pgPool.connect(pgOptions);
 console.log("pg connected");
 
 const app = express();

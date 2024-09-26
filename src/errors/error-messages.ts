@@ -1,6 +1,7 @@
-import { PASSWORD_LENGTH, USERNAME_LENGTH } from "../validation/config";
+import { PASSWORD_LENGTH, USERNAME_LENGTH } from "../validation/config.js";
 
 export const ERROR_MESSAGES = {
+  MISSING_ENV_DATA: (dataName: string) => `Missing environment data: ${dataName}`,
   SERVER_GENERIC: "Internal server error",
   RATE_LIMITER: {
     REQUESTING_TOO_QUICKLY:

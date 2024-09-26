@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AnyZodObject, ZodError } from "zod";
-import SnowAuthError from "../errors/custom-error";
+import SnowAuthError from "../errors/custom-error.js";
 
 export const validate =
   (schema: AnyZodObject) => (req: Request, _res: Response, next: NextFunction) => {

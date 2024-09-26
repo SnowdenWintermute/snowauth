@@ -1,6 +1,6 @@
 exports.shorthands = undefined;
 
-const resourceName="user_status"
+const resourceName = "user_status";
 
 exports.up = (pgm) => {
   pgm.sql(`

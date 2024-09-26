@@ -1,7 +1,7 @@
 exports.shorthands = undefined;
 
 const resourceType="TABLE"
-const resourceName="user_ids"
+const resourceName="user"
 
 exports.up = (pgm) => {
   pgm.sql(`
