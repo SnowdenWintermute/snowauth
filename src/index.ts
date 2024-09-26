@@ -3,11 +3,11 @@ dotenv.config();
 import express from "express";
 import { pgOptions } from "./database/config.js";
 import { ROUTE_NAMES } from "./route-names.js";
-import registerNewAccountHandler from "./route-handlers/register-new-account.js";
 import { validate } from "./validation/validate.js";
 import { registerUserSchema } from "./validation/register-user-schema.js";
 import pgPool from "./database/instantiate-wrapped-pool.js";
 import { valkeyManager } from "./kv-store/client.js";
+import accountCreationRequestHandler from "./route-handlers/account-creation.js";
 
 const PORT = 8081;
 pgPool.connect(pgOptions);
@@ -17,9 +17,7 @@ const app = express();
 
 app.get("/", (req, res) => res.send("You have reached the root route of the snowauth server"));
 // USEABLE BY ANYONE
-//
-// - registration
-app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), registerNewAccountHandler);
+app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequestHandler);
 // app.post("/users", registrationIpRateLimiter, validate(registerUserSchema), registerNewAccountHandler);
 // - account activation
 // router.put("/users", accountActivationHandler);
