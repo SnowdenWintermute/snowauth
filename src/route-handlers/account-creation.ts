@@ -8,6 +8,12 @@ import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 import { env } from "../utils/load-env-variables.js";
+import { sendEmail } from "../emails/send-email.js";
+import {
+  ACCOUNT_ACTIVATION_SUBJECT,
+  buildAccountActivationHTML,
+  buildAccountActivationText,
+} from "../emails/email-templates.js";
 
 export type AccountActivationTokenPayload = {
   tokenCreatedAt: number;
@@ -20,7 +26,7 @@ export default async function accountCreationRequestHandler(
   res: Response,
   next: NextFunction
 ) {
-  const { email } = req.body;
+  const { email, websiteName, activationPageUrl } = req.body;
   const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
 
   if (existingCredentials && existingCredentials.password !== null) {
@@ -48,9 +54,19 @@ export default async function accountCreationRequestHandler(
 
   // setting the value of the account creation session as the time the token was created lets us compare
   // the token creation time with the session time to verify a valid, unused token is being used with this session
-  valkeyManager.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, tokenCreatedAt, {
+  valkeyManager.context.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, tokenCreatedAt, {
     EX: sessionExpiration,
   });
 
-  res.status(200).json({ accountActivationToken });
+  const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}`;
+
+  // send them an email
+  sendEmail(
+    email,
+    ACCOUNT_ACTIVATION_SUBJECT,
+    buildAccountActivationText(websiteName, activationPageUrlWithToken),
+    buildAccountActivationHTML(websiteName, activationPageUrlWithToken)
+  );
+
+  res.sendStatus(200);
 }

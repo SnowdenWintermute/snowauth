@@ -1,7 +1,7 @@
 import { cleanEnv, str, email, num } from "envalid";
 
 export const env = cleanEnv(process.env, {
-  NODE_ENV: str({ choices: ["development", "production"] }),
+  NODE_ENV: str({ choices: ["development", "production", "test"] }),
   POSTGRES_HOST: str(),
   POSTGRES_DB: str(),
   POSTGRES_USER: str(),

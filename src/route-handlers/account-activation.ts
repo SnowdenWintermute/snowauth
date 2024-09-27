@@ -32,7 +32,7 @@ export default async function accountActivationHandler(
     // the value of the session should be the time the token was created so that
     // tokens match their corresponding sessions
     const sessionName = `${ACCOUNT_CREATION_SESSION_PREFIX}${email}`;
-    const accountActivationSession = await valkeyManager.client.get(sessionName);
+    const accountActivationSession = await valkeyManager.context.client.get(sessionName);
     if (!accountActivationSession || parseInt(accountActivationSession) !== tokenCreatedAt) {
       return next([
         new SnowAuthError(ERROR_MESSAGES.SESSION.USED_OR_EXPIRED_ACCOUNT_CREATION_SESSION, 401),
@@ -63,7 +63,7 @@ export default async function accountActivationHandler(
       await profilesRepo.update(profileOption);
     }
 
-    valkeyManager.client.del(sessionName);
+    valkeyManager.context.client.del(sessionName);
 
     res.sendStatus(201);
   } catch (error: any) {

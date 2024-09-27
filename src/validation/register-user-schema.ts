@@ -9,6 +9,8 @@ export const registerUserSchema = object({
     email: string({ required_error: ERROR_MESSAGES.VALIDATION.REQUIRED_FIELD.EMAIL }).email(
       ERROR_MESSAGES.VALIDATION.INVALID_EMAIL
     ),
+    websiteName: string(),
+    activationPageUrl: string().url(),
   }),
 });
 

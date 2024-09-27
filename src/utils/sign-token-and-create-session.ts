@@ -7,7 +7,7 @@ export default async function signTokenAndCreateSession(email: string, userId: n
   const accessToken = signJwtSymmetric({ email }, env.ACCESS_TOKEN_PRIVATE_KEY, {
     expiresIn: `${env.ACCESS_TOKEN_EXPIRATION / 1000 / 60}m`,
   });
-  await valkeyManager.client.set(`${AUTH_SESSION_PREFIX}${userId}`, userId, {
+  await valkeyManager.context.client.set(`${AUTH_SESSION_PREFIX}${userId}`, userId, {
     EX: env.AUTH_SESSION_EXPIRATION,
   });
 

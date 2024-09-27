@@ -1,6 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 import express from "express";
+import sgMail from "@sendgrid/mail";
 import { pgOptions } from "./database/config.js";
 import { ROUTE_NAMES } from "./route-names.js";
 import { validate } from "./validation/validate.js";
@@ -12,14 +13,16 @@ import accountActivationHandler from "./route-handlers/account-activation.js";
 import { accountActivationSchema } from "./validation/account-activation-schema.js";
 import loginHandler from "./route-handlers/login.js";
 import { loginSchema } from "./validation/login-schema.js";
+import { env } from "./utils/load-env-variables.js";
 
 const PORT = 8081;
+sgMail.setApiKey(env.SENDGRID_API_KEY);
 pgPool.connect(pgOptions);
-await valkeyManager.connect();
+await valkeyManager.context.connect();
 
-const app = express();
+export const app = express();
 
-app.get("/", (req, res) => res.send("You have reached the root route of the snowauth server"));
+app.get("/", (req, res) => res.send("You have reached the snowauth server"));
 // USEABLE BY ANYONE
 // app.post("/users", registrationIpRateLimiter, validate(registerUserSchema), registerNewAccountHandler);
 app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequestHandler);

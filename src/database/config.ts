@@ -9,10 +9,12 @@ export const pgOptions = {
   password: process.env.POSTGRES_PASSWORD,
 };
 
-// export const pgOptionsTestDB = {
-//   host: "localhost",
-//   port: 5432,
-//   database: "test-db",
-//   user: process.env.POSTGRES_USER,
-//   password: process.env.POSTGRES_PASSWORD,
-// };
+export const TEST_DB_NAME = "test-db";
+
+export const pgOptionsTestDB = {
+  host: "localhost",
+  port: 5432,
+  database: TEST_DB_NAME,
+  user: "postgres",
+  password: "postgres",
+};
