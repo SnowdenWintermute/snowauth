@@ -29,6 +29,7 @@ class ProfileRepo extends DatabaseRepository<Profile> {
     );
 
     if (rows[0]) return toCamelCase(rows)[0] as unknown as Profile;
+    console.error(`Failed to insert a new ${tableName} record`);
     return undefined;
   }
 

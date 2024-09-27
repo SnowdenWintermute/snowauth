@@ -4,18 +4,18 @@ import { RESOURCE_NAMES } from "../db-consts.js";
 import toCamelCase from "../../utils/to-camel-case.js";
 import { DatabaseRepository } from "./index.js";
 
-export type UserId = {
+export type UserIdRecord = {
   id: number;
   createdAt: number | Date;
   updatedAt: number | Date;
 };
 
-class UserIdsRepo extends DatabaseRepository<UserId> {
+class UserIdsRepo extends DatabaseRepository<UserIdRecord> {
   async insert() {
     const { rows } = await pgPool.query(
       format(`INSERT INTO ${this.tableName} DEFAULT VALUES RETURNING *;`)
     );
-    return toCamelCase(rows)[0] as unknown as UserId;
+    return toCamelCase(rows)[0] as unknown as UserIdRecord;
   }
 }
 

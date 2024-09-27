@@ -41,6 +41,7 @@ export const ERROR_MESSAGES = {
     ACCOUNT_BANNED: "The specified account has been banned",
     ACCOUNT_LOCKED:
       "Your account has been locked for security reasons, please reset your password to regain access",
+    MISSING_PROFLIE: "Expected to find a user profile but didn't",
   },
   ADMIN: {
     NO_IP_TO_BAN: "No IP address was found",

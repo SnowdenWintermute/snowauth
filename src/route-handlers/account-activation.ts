@@ -9,66 +9,75 @@ import { valkeyManager } from "../kv-store/client.js";
 import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 import { userIdsRepo } from "../database/repos/user_ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
+import { profilesRepo } from "../database/repos/profiles.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,
   res: Response,
   next: NextFunction
 ) {
-  const { token, username, password } = req.body;
+  try {
+    const { token, username, password } = req.body;
 
-  const accountActivationPrivateKey = getEnvVariable("ACCOUNT_ACTIVATION_TOKEN_PRIVATE_KEY");
-  if (accountActivationPrivateKey instanceof Error)
-    return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
+    const accountActivationPrivateKey = getEnvVariable("ACCOUNT_ACTIVATION_TOKEN_PRIVATE_KEY");
+    if (accountActivationPrivateKey instanceof Error)
+      return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
 
-  const decoded = verifyJwtSymmetric<AccountActivationTokenPayload>(
-    token,
-    accountActivationPrivateKey
-  );
-  if (!decoded)
-    return next([new SnowAuthError(ERROR_MESSAGES.SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
+    const decoded = verifyJwtSymmetric<AccountActivationTokenPayload>(
+      token,
+      accountActivationPrivateKey
+    );
+    if (!decoded)
+      return next([new SnowAuthError(ERROR_MESSAGES.SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
 
-  const { email } = decoded;
+    const { email, tokenCreatedAt } = decoded;
 
-  const accountActivationSession = await valkeyManager.client.get(
-    `${ACCOUNT_CREATION_SESSION_PREFIX}${email}`
-  );
-  if (!accountActivationSession) {
-    return next([
-      new SnowAuthError(ERROR_MESSAGES.SESSION.USED_OR_EXPIRED_ACCOUNT_CREATION_SESSION, 401),
-    ]);
+    // the value of the session should be the time the token was created so that
+    // tokens match their corresponding sessions
+    const accountActivationSession = await valkeyManager.client.get(
+      `${ACCOUNT_CREATION_SESSION_PREFIX}${email}`
+    );
+    if (!accountActivationSession || parseInt(accountActivationSession) !== tokenCreatedAt) {
+      return next([
+        new SnowAuthError(ERROR_MESSAGES.SESSION.USED_OR_EXPIRED_ACCOUNT_CREATION_SESSION, 401),
+      ]);
+    }
+
+    const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
+
+    if (existingCredentials === undefined) {
+      const newUserIdRecord = await userIdsRepo.insert();
+      await credentialsRepo.insert(newUserIdRecord.id, email, password);
+      await profilesRepo.insert(newUserIdRecord.id, username);
+    } else {
+      await credentialsRepo.updatePassword(existingCredentials.id, password);
+      const profileOption = await profilesRepo.findOne("userId", existingCredentials.userId);
+      if (profileOption === undefined) throw new Error(ERROR_MESSAGES.USER.MISSING_PROFLIE);
+      profileOption.username = username;
+      profileOption.usernameUpdatedAt = Date.now();
+      await profilesRepo.update(profileOption);
+    }
+
+    res.sendStatus(201);
+  } catch (error: any) {
+    const errors = [];
+    if (error.schema && error.detail) {
+      // probably a postgres error
+      console.log("pg error: ", error.code, JSON.stringify(error, null, 2));
+      // @todo - prettify errors and add to ERROR_MESSAGES object
+      if (error.code === "23505" && error.constraint === "users_email_key")
+        errors.push(new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.EMAIL_IN_USE_OR_UNAVAILABLE, 403));
+      if (error.code === "23505" && error.constraint === "users_name_key")
+        errors.push(new SnowAuthError(ERROR_MESSAGES.USER.NAME_IN_USE_OR_UNAVAILABLE, 403));
+      else if (error.column)
+        errors.push(new SnowAuthError(`Database error - problem relating to ${error.column}`, 400));
+      else if (error.detail)
+        errors.push(new SnowAuthError(`Database error - detail: ${error.detail}`, 400));
+    } else if (error instanceof SnowAuthError) {
+      errors.push(error);
+    } else if (error.message && error.status) {
+      errors.push(new SnowAuthError(error.message, error.code));
+    }
+    return next(errors);
   }
-
-  const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
-
-  // check if their credentials already were created by another id provider
-  // if not
-  // - check if the email is already in use by another user
-  // - create a new user, new profile and new credentials
-  // else, add their password to the existing credentials
-  // if they provided a new username
-  // - check if the username is already taken
-  // - update their profile with the username
-
-  //try {
-  //  await wrappedRedis.context!.del(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`);
-  //  res.status(201).json({ user: new SanitizedUser(user) });
-  //} catch (error: any) {
-  //  if (error.schema && error.detail) {
-  //    // probably a postgres error
-  //    const errors = [];
-  //    console.log("pg error: ", error.code, JSON.stringify(error, null, 2));
-  //    // @todo - prettify errors and add to ERROR_MESSAGES object
-  //    if (error.code === "23505" && error.constraint === "users_email_key")
-  //      errors.push(new CustomError(ERROR_MESSAGES.AUTH.EMAIL_IN_USE_OR_UNAVAILABLE, 403));
-  //    if (error.code === "23505" && error.constraint === "users_name_key")
-  //      errors.push(new CustomError(ERROR_MESSAGES.AUTH.NAME_IN_USE_OR_UNAVAILABLE, 403));
-  //    else if (error.column)
-  //      errors.push(new CustomError(`Database error - problem relating to ${error.column}`, 400));
-  //    else if (error.detail)
-  //      errors.push(new CustomError(`Database error - detail: ${error.detail}`, 400));
-  //    return next(errors);
-  //  }
-  //}
-  return res.json({});
 }

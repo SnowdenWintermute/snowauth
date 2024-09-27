@@ -29,6 +29,7 @@ class CredentialsRepo extends DatabaseRepository<Credentials> {
     );
 
     if (rows[0]) return toCamelCase(rows)[0] as unknown as Credentials;
+    console.error(`Failed to insert a new ${tableName} record`);
     return undefined;
   }
 
@@ -39,6 +40,19 @@ class CredentialsRepo extends DatabaseRepository<Credentials> {
         `UPDATE ${RESOURCE_NAMES.CREDENTIALS} SET email_address = %L, password = %L WHERE id = %L RETURNING *;`,
         emailAddress.toLowerCase().trim(),
         password,
+        id
+      )
+    );
+
+    if (rows[0]) return toCamelCase(rows)[0] as unknown as Credentials;
+    return undefined;
+  }
+
+  async updatePassword(id: number, newPassword: string) {
+    const { rows } = await this.pgPool.query(
+      format(
+        `UPDATE ${RESOURCE_NAMES.CREDENTIALS} SET password = %L WHERE id = %L RETURNING *;`,
+        newPassword,
         id
       )
     );

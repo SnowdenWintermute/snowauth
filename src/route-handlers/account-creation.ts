@@ -10,6 +10,7 @@ import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 
 export type AccountActivationTokenPayload = {
+  tokenCreatedAt: number;
   email: string;
   existingUsernameOption: null | string;
 };
@@ -42,16 +43,20 @@ export default async function accountCreationRequestHandler(
   )
     return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
 
+  const tokenCreatedAt = Date.now();
+
   const accountActivationToken = signJwtSymmetric<AccountActivationTokenPayload>(
     // if they have no username the requesting service's frontend can ask them for one
-    { email, existingUsernameOption },
+    { email, existingUsernameOption, tokenCreatedAt },
     accountActivationPrivateKey,
     {
       expiresIn: accountActivationSessionExpirationTime,
     }
   );
 
-  valkeyManager.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, "", {
+  // setting the value of the account creation session as the time the token was created lets us compare
+  // the token creation time with the session time to verify a valid, unused token is being used with this session
+  valkeyManager.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, tokenCreatedAt, {
     EX: parseInt(accountActivationSessionExpirationTime, 10),
   });
 
