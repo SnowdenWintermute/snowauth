@@ -53,7 +53,7 @@ export default async function accountActivationHandler(
       hashedPasswordOption = await argon2.hash(password, {
         hashLength: 32,
         type: argon2.argon2id,
-        secret: Buffer.from("mysecret"),
+        secret: Buffer.from(pepper),
       });
 
     if (existingCredentials === undefined) {

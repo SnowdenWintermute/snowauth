@@ -10,6 +10,8 @@ import { valkeyManager } from "./kv-store/client.js";
 import accountCreationRequestHandler from "./route-handlers/account-creation.js";
 import accountActivationHandler from "./route-handlers/account-activation.js";
 import { accountActivationSchema } from "./validation/account-activation-schema.js";
+import loginHandler from "./route-handlers/login.js";
+import { loginSchema } from "./validation/login-schema.js";
 
 const PORT = 8081;
 pgPool.connect(pgOptions);
@@ -26,7 +28,7 @@ app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequest
 app.put(ROUTE_NAMES.USERS, validate(accountActivationSchema), accountActivationHandler);
 
 // - login
-// router.post("/sessions", validate(loginSchema), loginHandler);
+app.post(ROUTE_NAMES.SESSIONS, validate(loginSchema), loginHandler);
 // - get change password email
 // router.post("/credentials", passwordResetEmailRequestIpRateLimiter, passwordResetEmailRequestHandler);
 // - change password using token in email

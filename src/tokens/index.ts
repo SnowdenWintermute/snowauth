@@ -24,12 +24,10 @@ export function signJwtSymmetric<T extends Object>(
   key: string,
   options: SignOptions = {}
 ) {
-  if (key)
-    return jwt.sign(payload, key, {
-      ...(options && options),
-      algorithm: "HS256",
-    });
-  return null;
+  return jwt.sign(payload, key, {
+    ...(options && options),
+    algorithm: "HS256",
+  });
 }
 
 export function verifyJwtSymmetric<T extends Object>(token: string, key: string): T | null {

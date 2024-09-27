@@ -4,3 +4,9 @@ export const RESOURCE_NAMES = {
   CREDENTIALS: "credentials",
   USER_PROFILES: "user_profiles",
 };
+
+export const USER_STATUS = {
+  ACTIVE: "active",
+  LOCKED_OUT: "locked_out",
+  BANNED: "banned",
+};

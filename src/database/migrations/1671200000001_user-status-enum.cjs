@@ -6,7 +6,6 @@ exports.up = (pgm) => {
   pgm.sql(`
     CREATE TYPE ${resourceName} as ENUM (
       'active',
-      'deleted',
       'locked_out',
       'banned'
     );
