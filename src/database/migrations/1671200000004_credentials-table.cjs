@@ -13,7 +13,7 @@ exports.up = (pgm) => {
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       email_address varchar(254) NOT NULL UNIQUE,
       email_address_updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-      password varchar(256),
+      password varchar(60),
       password_updated_at TIMESTAMP WITH TIME ZONE
     );
     `);

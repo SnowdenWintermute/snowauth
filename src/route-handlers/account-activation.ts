@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import * as argon2 from "argon2";
 import { AccountActivationUserInput } from "../validation/account-activation-schema.js";
 import { verifyJwtSymmetric } from "../tokens/index.js";
 import getEnvVariable from "../utils/get-env-variable.js";
@@ -34,9 +35,8 @@ export default async function accountActivationHandler(
 
     // the value of the session should be the time the token was created so that
     // tokens match their corresponding sessions
-    const accountActivationSession = await valkeyManager.client.get(
-      `${ACCOUNT_CREATION_SESSION_PREFIX}${email}`
-    );
+    const sessionName = `${ACCOUNT_CREATION_SESSION_PREFIX}${email}`;
+    const accountActivationSession = await valkeyManager.client.get(sessionName);
     if (!accountActivationSession || parseInt(accountActivationSession) !== tokenCreatedAt) {
       return next([
         new SnowAuthError(ERROR_MESSAGES.SESSION.USED_OR_EXPIRED_ACCOUNT_CREATION_SESSION, 401),
@@ -45,12 +45,23 @@ export default async function accountActivationHandler(
 
     const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
 
+    let hashedPasswordOption: null | string = null;
+    const pepper = getEnvVariable("HASHING_PEPPER");
+    if (pepper instanceof Error)
+      return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
+    if (password !== null)
+      hashedPasswordOption = await argon2.hash(password, {
+        hashLength: 32,
+        type: argon2.argon2id,
+        secret: Buffer.from("mysecret"),
+      });
+
     if (existingCredentials === undefined) {
       const newUserIdRecord = await userIdsRepo.insert();
-      await credentialsRepo.insert(newUserIdRecord.id, email, password);
+      await credentialsRepo.insert(newUserIdRecord.id, email, hashedPasswordOption);
       await profilesRepo.insert(newUserIdRecord.id, username);
     } else {
-      await credentialsRepo.updatePassword(existingCredentials.id, password);
+      await credentialsRepo.updatePassword(existingCredentials.id, hashedPasswordOption);
       const profileOption = await profilesRepo.findOne("userId", existingCredentials.userId);
       if (profileOption === undefined) throw new Error(ERROR_MESSAGES.USER.MISSING_PROFLIE);
       profileOption.username = username;
@@ -58,18 +69,15 @@ export default async function accountActivationHandler(
       await profilesRepo.update(profileOption);
     }
 
+    valkeyManager.client.del(sessionName);
+
     res.sendStatus(201);
   } catch (error: any) {
     const errors = [];
     if (error.schema && error.detail) {
       // probably a postgres error
-      console.log("pg error: ", error.code, JSON.stringify(error, null, 2));
-      // @todo - prettify errors and add to ERROR_MESSAGES object
-      if (error.code === "23505" && error.constraint === "users_email_key")
-        errors.push(new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.EMAIL_IN_USE_OR_UNAVAILABLE, 403));
-      if (error.code === "23505" && error.constraint === "users_name_key")
-        errors.push(new SnowAuthError(ERROR_MESSAGES.USER.NAME_IN_USE_OR_UNAVAILABLE, 403));
-      else if (error.column)
+      console.error("pg error: ", error.code, JSON.stringify(error, null, 2));
+      if (error.column)
         errors.push(new SnowAuthError(`Database error - problem relating to ${error.column}`, 400));
       else if (error.detail)
         errors.push(new SnowAuthError(`Database error - detail: ${error.detail}`, 400));

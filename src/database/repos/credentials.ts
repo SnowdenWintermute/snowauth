@@ -48,7 +48,7 @@ class CredentialsRepo extends DatabaseRepository<Credentials> {
     return undefined;
   }
 
-  async updatePassword(id: number, newPassword: string) {
+  async updatePassword(id: number, newPassword: null | string) {
     const { rows } = await this.pgPool.query(
       format(
         `UPDATE ${RESOURCE_NAMES.CREDENTIALS} SET password = %L WHERE id = %L RETURNING *;`,
