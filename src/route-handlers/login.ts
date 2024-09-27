@@ -2,7 +2,6 @@ import { Request, Response, NextFunction, CookieOptions } from "express";
 import * as argon2 from "argon2";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { LoginUserInput } from "../validation/login-schema.js";
-import getEnvVariable from "../utils/get-env-variable.js";
 import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { valkeyManager } from "../kv-store/client.js";
@@ -15,16 +14,14 @@ import {
 import { profilesRepo } from "../database/repos/profiles.js";
 import { USER_STATUS } from "../database/db-consts.js";
 import signTokenAndCreateSession from "../utils/sign-token-and-create-session.js";
+import { env } from "../utils/load-env-variables.js";
 
 export default async function loginHandler(
   req: Request<object, object, LoginUserInput>,
   res: Response,
   next: NextFunction
 ) {
-  const accessTokenExpiresInString = getEnvVariable("ACCESS_TOKEN_EXPIRES_IN");
-  if (accessTokenExpiresInString instanceof Error)
-    return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
-  const accessTokenExpiresIn = parseInt(accessTokenExpiresInString, 10);
+  const accessTokenExpiresIn = env.ACCESS_TOKEN_EXPIRATION;
 
   const accessTokenCookieOptions: CookieOptions = {
     expires: new Date(Date.now() + accessTokenExpiresIn),
@@ -40,10 +37,8 @@ export default async function loginHandler(
   if (!credentials || !credentials.password)
     return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.INVALID, 401)]);
 
-  const pepper = getEnvVariable("HASHING_PEPPER");
-  if (pepper instanceof Error) return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
   const isValid = await argon2.verify(credentials.password, password, {
-    secret: Buffer.from(pepper),
+    secret: Buffer.from(env.HASHING_PEPPER),
   });
 
   const profile = await profilesRepo.findOne("userId", credentials.userId);
@@ -73,11 +68,9 @@ export default async function loginHandler(
     else return next([new SnowAuthError(ERROR_MESSAGES.USER.ACCOUNT_BANNED, 401)]);
   }
 
-  const accessTokenResult = await signTokenAndCreateSession(email, credentials.userId);
-  if (accessTokenResult instanceof Error)
-    return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
+  const accessToken = await signTokenAndCreateSession(email, credentials.userId);
 
-  res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessTokenResult, accessTokenCookieOptions);
+  res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, accessTokenCookieOptions);
 
   res.sendStatus(200);
 }

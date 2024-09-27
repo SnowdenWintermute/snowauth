@@ -1,5 +1,5 @@
 import { createClient, RedisClientType } from "redis";
-import getEnvVariable from "../utils/get-env-variable.js";
+import { env } from "../utils/load-env-variables.js";
 
 const CONNECTION_TIMEOUT_MS = 3000;
 
@@ -7,9 +7,7 @@ export class ValkeyManager {
   client: RedisClientType;
   connected: boolean = false;
   constructor() {
-    const valkeyUrl = getEnvVariable("VALKEY_URL");
-    if (valkeyUrl instanceof Error) console.error(valkeyUrl);
-    else console.log("connecting to valkey at ", valkeyUrl);
+    console.log("connecting to valkey at ", env.VALKEY_URL);
     this.client = createClient({
       url: process.env.VALKEY_URL,
     });

@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import * as argon2 from "argon2";
 import { AccountActivationUserInput } from "../validation/account-activation-schema.js";
 import { verifyJwtSymmetric } from "../tokens/index.js";
-import getEnvVariable from "../utils/get-env-variable.js";
 import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { AccountActivationTokenPayload } from "./account-creation.js";
@@ -11,6 +10,7 @@ import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 import { userIdsRepo } from "../database/repos/user_ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
+import { env } from "../utils/load-env-variables.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,
@@ -20,13 +20,9 @@ export default async function accountActivationHandler(
   try {
     const { token, username, password } = req.body;
 
-    const accountActivationPrivateKey = getEnvVariable("ACCOUNT_ACTIVATION_TOKEN_PRIVATE_KEY");
-    if (accountActivationPrivateKey instanceof Error)
-      return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
-
     const decoded = verifyJwtSymmetric<AccountActivationTokenPayload>(
       token,
-      accountActivationPrivateKey
+      env.ACCOUNT_ACTIVATION_TOKEN_PRIVATE_KEY
     );
     if (!decoded)
       return next([new SnowAuthError(ERROR_MESSAGES.SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
@@ -46,14 +42,12 @@ export default async function accountActivationHandler(
     const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
 
     let hashedPasswordOption: null | string = null;
-    const pepper = getEnvVariable("HASHING_PEPPER");
-    if (pepper instanceof Error)
-      return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
+
     if (password !== null)
       hashedPasswordOption = await argon2.hash(password, {
         hashLength: 32,
         type: argon2.argon2id,
-        secret: Buffer.from(pepper),
+        secret: Buffer.from(env.HASHING_PEPPER),
       });
 
     if (existingCredentials === undefined) {
