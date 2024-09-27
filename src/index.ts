@@ -14,24 +14,26 @@ import { accountActivationSchema } from "./validation/account-activation-schema.
 import loginHandler from "./route-handlers/login.js";
 import { loginSchema } from "./validation/login-schema.js";
 import { env } from "./utils/load-env-variables.js";
+import errorHandler from "./errors/error-handler.js";
 
 const PORT = 8081;
 sgMail.setApiKey(env.SENDGRID_API_KEY);
 pgPool.connect(pgOptions);
-await valkeyManager.context.connect();
+valkeyManager.context.connect();
 
-export const app = express();
+export const expressApp = express();
+expressApp.use(express.json({ limit: "10kb" }));
 
-app.get("/", (req, res) => res.send("You have reached the snowauth server"));
+expressApp.get("/", (req, res) => res.send("You have reached the snowauth server"));
 // USEABLE BY ANYONE
 // app.post("/users", registrationIpRateLimiter, validate(registerUserSchema), registerNewAccountHandler);
-app.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequestHandler);
+expressApp.post(ROUTE_NAMES.USERS, validate(registerUserSchema), accountCreationRequestHandler);
 // - account activation
 // router.put("/users", accountActivationHandler);
-app.put(ROUTE_NAMES.USERS, validate(accountActivationSchema), accountActivationHandler);
+expressApp.put(ROUTE_NAMES.USERS, validate(accountActivationSchema), accountActivationHandler);
 
 // - login
-app.post(ROUTE_NAMES.SESSIONS, validate(loginSchema), loginHandler);
+expressApp.post(ROUTE_NAMES.SESSIONS, validate(loginSchema), loginHandler);
 // - get change password email
 // router.post("/credentials", passwordResetEmailRequestIpRateLimiter, passwordResetEmailRequestHandler);
 // - change password using token in email
@@ -50,7 +52,8 @@ app.post(ROUTE_NAMES.SESSIONS, validate(loginSchema), loginHandler);
 // router.use(restrictTo(UserRole.MODERATOR, UserRole.ADMIN));
 // - ban account
 // router.put(/users/bans/:user_id, banUserAccountHandler);
+expressApp.use(errorHandler);
 
-app.listen(PORT, () => {
+expressApp.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });

@@ -10,3 +10,5 @@ export default class SnowAuthError extends Error {
     this.formField = field;
   }
 }
+
+export type SnowAuthErrorDetails = { message: string; field?: string };
