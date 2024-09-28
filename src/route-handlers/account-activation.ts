@@ -11,6 +11,8 @@ import { userIdsRepo } from "../database/repos/user_ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 import { env } from "../utils/load-env-variables.js";
+import signTokenAndCreateSession from "../utils/sign-token-and-create-session.js";
+import { ACCESS_TOKEN_COOKIE_NAME, ACCESS_TOKEN_COOKIE_OPTIONS } from "../config.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,
@@ -41,31 +43,35 @@ export default async function accountActivationHandler(
 
     const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
 
-    let hashedPasswordOption: null | string = null;
-
-    if (password !== null)
-      hashedPasswordOption = await argon2.hash(password, {
-        hashLength: 32,
-        type: argon2.argon2id,
-        secret: Buffer.from(env.HASHING_PEPPER),
-      });
+    const hashedPassword = await argon2.hash(password, {
+      hashLength: 32,
+      type: argon2.argon2id,
+      secret: Buffer.from(env.HASHING_PEPPER),
+    });
 
     if (existingCredentials === undefined) {
       const newUserIdRecord = await userIdsRepo.insert();
-      await credentialsRepo.insert(newUserIdRecord.id, email, hashedPasswordOption);
+      await credentialsRepo.insert(newUserIdRecord.id, email, hashedPassword);
       await profilesRepo.insert(newUserIdRecord.id, username);
     } else {
-      await credentialsRepo.updatePassword(existingCredentials.id, hashedPasswordOption);
-      const profileOption = await profilesRepo.findOne("userId", existingCredentials.userId);
-      if (profileOption === undefined) throw new Error(ERROR_MESSAGES.USER.MISSING_PROFLIE);
-      profileOption.username = username;
-      profileOption.usernameUpdatedAt = Date.now();
-      await profilesRepo.update(profileOption);
+      await credentialsRepo.updatePassword(existingCredentials.id, hashedPassword);
+      // don't update their username here, if they already have an account from a
+      // third party id provider we will get their initial username in a different
+      // dedicated route handler
     }
 
     valkeyManager.context.client.del(sessionName);
 
-    res.sendStatus(201);
+    const credentials = await credentialsRepo.findOne("emailAddress", email);
+    if (!credentials) {
+      console.error("expected to find the user we just inserted or updated");
+      return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
+    }
+
+    const accessToken = await signTokenAndCreateSession(email, credentials.userId);
+    res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_OPTIONS);
+
+    res.status(201).json({ email, username });
   } catch (error: any) {
     const errors = [];
     if (error.schema && error.detail) {

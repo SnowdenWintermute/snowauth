@@ -5,21 +5,28 @@ import setUpTestDatabaseContexts from "../utils/testing/set-up-test-database-con
 import { sendEmail } from "../emails/send-email.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { userIdsRepo } from "../database/repos/user_ids.js";
-import { expressApp } from "../index.js";
 import { ROUTE_NAMES } from "../route-names.js";
-import {
-  responseBodyIncludesCustomErrorField,
-  responseBodyIncludesCustomErrorMessage,
-} from "../utils/testing/custom-error-checkers.js";
+import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
+import buildExpressApp from "../buildExpressApp.js";
+import { Application } from "express";
 
 jest.mock("../emails/send-email.js");
 
 describe("accountCreationHandler", () => {
   const testId = Date.now().toString();
   let pgContext: PGTestingContext;
+  let expressApp: Application;
+  const existingUserEmail = "existing@email.com";
+  const existingUserEmailWithNoPassword = "existing@third.party.id.provider.com";
+
   beforeAll(async () => {
     pgContext = await setUpTestDatabaseContexts(testId);
+    expressApp = buildExpressApp();
+    // set up an existing user
+    const userId = await userIdsRepo.insert();
+    credentialsRepo.insert(userId.id, existingUserEmail, "aoeu");
+    credentialsRepo.insert(userId.id, existingUserEmailWithNoPassword, null);
   });
 
   beforeEach(async () => {
@@ -32,17 +39,29 @@ describe("accountCreationHandler", () => {
   });
 
   it("gets error for trying to sign up with an existing email with existing password", async () => {
-    const userId = await userIdsRepo.insert();
-    credentialsRepo.insert(userId.id, "existing@email.com", "aoeu");
-    const response = await request(expressApp).post(ROUTE_NAMES.USERS).send({});
-    expect(response.status).toBe(400);
-    expect(response.body.error);
+    const response = await request(expressApp).post(ROUTE_NAMES.USERS).send({
+      email: existingUserEmail,
+      websiteName: "test",
+      activationPageUrl: "http://test.com",
+    });
+
+    expect(response.status).toBe(403);
     expect(
       responseBodyIncludesCustomErrorMessage(
         response,
-        ERROR_MESSAGES.VALIDATION.REQUIRED_FIELD.EMAIL
+        ERROR_MESSAGES.CREDENTIALS.EMAIL_IN_USE_OR_UNAVAILABLE
       )
     ).toBeTruthy();
-    expect(responseBodyIncludesCustomErrorField(response, "email")).toBeTruthy();
+  });
+
+  it("allows sign up with an existing email if no existing password", async () => {
+    const response = await request(expressApp).post(ROUTE_NAMES.USERS).send({
+      email: existingUserEmailWithNoPassword,
+      websiteName: "test",
+      activationPageUrl: "http://test.com",
+    });
+
+    expect(response.status).toBe(201);
+    expect(sendEmail).toHaveBeenCalled();
   });
 });

@@ -8,6 +8,7 @@ import { valkeyManager } from "../kv-store/client.js";
 import { FAILED_LOGIN_ATTEMPTS_PREFIX } from "../kv-store/consts.js";
 import {
   ACCESS_TOKEN_COOKIE_NAME,
+  ACCESS_TOKEN_COOKIE_OPTIONS,
   FAILED_LOGIN_COUNTER_EXPIRATION,
   FAILED_LOGIN_COUNTER_TOLERANCE,
 } from "../config.js";
@@ -21,16 +22,6 @@ export default async function loginHandler(
   res: Response,
   next: NextFunction
 ) {
-  const accessTokenExpiresIn = env.ACCESS_TOKEN_EXPIRATION;
-
-  const accessTokenCookieOptions: CookieOptions = {
-    expires: new Date(Date.now() + accessTokenExpiresIn),
-    maxAge: accessTokenExpiresIn,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  };
-
   // find the credentials for this email address
   const { email, password } = req.body;
   const credentials = await credentialsRepo.findOne("emailAddress", email);
@@ -72,8 +63,7 @@ export default async function loginHandler(
   }
 
   const accessToken = await signTokenAndCreateSession(email, credentials.userId);
-
-  res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, accessTokenCookieOptions);
+  res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_OPTIONS);
 
   res.sendStatus(200);
 }

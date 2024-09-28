@@ -68,5 +68,5 @@ export default async function accountCreationRequestHandler(
     buildAccountActivationHTML(websiteName, activationPageUrlWithToken)
   );
 
-  res.sendStatus(200);
+  res.sendStatus(201);
 }
