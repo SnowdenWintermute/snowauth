@@ -22,7 +22,7 @@ class ProfileRepo extends DatabaseRepository<Profile> {
   async insert(userId: number, username: null | string) {
     const { rows } = await this.pgPool.query(
       format(
-        `INSERT INTO ${tableName} (user_id, username) VALUES (%L, %L, %L) RETURNING *;`,
+        `INSERT INTO ${tableName} (user_id, username) VALUES (%L, %L) RETURNING *;`,
         userId,
         username
       )

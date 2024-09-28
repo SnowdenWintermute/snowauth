@@ -22,7 +22,7 @@ export class DatabaseRepository<T> {
     return undefined;
   }
 
-  async findById(id: number): Promise<undefined | T> {
+  async findById(id: string): Promise<undefined | T> {
     const result = await this.pgPool.query(`SELECT * FROM ${this.tableName} WHERE id = $1;`, [id]);
     const { rows } = result;
     if (rows[0]) return toCamelCase(rows)[0] as unknown as T;

@@ -11,9 +11,7 @@ import { userIdsRepo } from "../database/repos/user_ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 import { env } from "../utils/load-env-variables.js";
-import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "../config.js";
-import createSession from "../tokens/create-session.js";
-import { logUserIn } from "./login.js";
+import { logUserIn } from "./log-user-in.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,

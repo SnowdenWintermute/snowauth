@@ -15,10 +15,6 @@ export default function buildExpressApp() {
   const expressApp = express();
   expressApp.use(express.json({ limit: INCOMING_JSON_DATA_LIMIT }));
   expressApp.use(cookieParser());
-  expressApp.use((req, res, next) => {
-    res.setHeader("Cache-Control", 'no-cache="Set-Cookie"');
-    next();
-  });
 
   expressApp.get("/", (_req, res) => res.send("You have reached the snowauth server"));
   // USEABLE BY ANYONE

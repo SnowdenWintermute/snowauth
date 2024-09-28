@@ -7,9 +7,9 @@ export const FAILED_LOGIN_COUNTER_EXPIRATION = 10 * ONE_MINUTE;
 export const FAILED_LOGIN_COUNTER_TOLERANCE = 5;
 
 export const SESSION_COOKIE_NAME = "id";
-export const REMEMBER_ME_COOKIE_NAME = "series";
-
-const accessTokenExpiresIn = env.SESSION_EXPIRATION;
+export const REMEMBER_ME_COOKIE_NAME = "rm";
+export const REMEMBER_ME_SERIES_COOKIE_NAME = "series";
+export const REMEMBER_ME_TOKEN_COOKIE_NAME = "rmid";
 
 export const SESSION_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
@@ -18,7 +18,7 @@ export const SESSION_COOKIE_OPTIONS: CookieOptions = {
 };
 
 export const REMEMBER_ME_COOKIE_OPTIONS: CookieOptions = {
-  maxAge: accessTokenExpiresIn,
+  maxAge: env.REMEMBER_ME_TOKEN_EXPIRATION,
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict",
