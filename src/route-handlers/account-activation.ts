@@ -11,8 +11,9 @@ import { userIdsRepo } from "../database/repos/user_ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 import { env } from "../utils/load-env-variables.js";
-import signTokenAndCreateSession from "../utils/sign-token-and-create-session.js";
-import { ACCESS_TOKEN_COOKIE_NAME, ACCESS_TOKEN_COOKIE_OPTIONS } from "../config.js";
+import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "../config.js";
+import createSession from "../tokens/create-session.js";
+import { logUserIn } from "./login.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,
@@ -68,8 +69,8 @@ export default async function accountActivationHandler(
       return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
     }
 
-    const accessToken = await signTokenAndCreateSession(email, credentials.userId);
-    res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_OPTIONS);
+    // log in
+    await logUserIn(res, credentials, false);
 
     res.status(201).json({ email, username });
   } catch (error: any) {

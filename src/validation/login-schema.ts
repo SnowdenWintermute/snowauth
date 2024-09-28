@@ -1,4 +1,4 @@
-import { object, string, TypeOf } from "zod";
+import { boolean, object, string, TypeOf } from "zod";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 
 export const loginSchema = object({
@@ -10,6 +10,7 @@ export const loginSchema = object({
     password: string({
       required_error: ERROR_MESSAGES.VALIDATION.REQUIRED_FIELD.PASSWORD,
     }).min(1, ERROR_MESSAGES.VALIDATION.REQUIRED_FIELD.PASSWORD),
+    rememberMe: boolean().default(false),
   }),
 });
 

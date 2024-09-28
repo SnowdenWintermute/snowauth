@@ -1,21 +1,21 @@
 import { Request, Response, NextFunction, CookieOptions } from "express";
 import * as argon2 from "argon2";
-import { credentialsRepo } from "../database/repos/credentials.js";
+import { Credentials, credentialsRepo } from "../database/repos/credentials.js";
 import { LoginUserInput } from "../validation/login-schema.js";
 import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { valkeyManager } from "../kv-store/client.js";
 import { FAILED_LOGIN_ATTEMPTS_PREFIX } from "../kv-store/consts.js";
 import {
-  ACCESS_TOKEN_COOKIE_NAME,
-  ACCESS_TOKEN_COOKIE_OPTIONS,
   FAILED_LOGIN_COUNTER_EXPIRATION,
   FAILED_LOGIN_COUNTER_TOLERANCE,
+  SESSION_COOKIE_NAME,
+  SESSION_COOKIE_OPTIONS,
 } from "../config.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 import { USER_STATUS } from "../database/db-consts.js";
-import signTokenAndCreateSession from "../utils/sign-token-and-create-session.js";
 import { env } from "../utils/load-env-variables.js";
+import createSession from "../tokens/create-session.js";
 
 export default async function loginHandler(
   req: Request<object, object, LoginUserInput>,
@@ -23,7 +23,7 @@ export default async function loginHandler(
   next: NextFunction
 ) {
   // find the credentials for this email address
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
   const credentials = await credentialsRepo.findOne("emailAddress", email);
   if (!credentials || !credentials.password)
     return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.INVALID, 401)]);
@@ -62,8 +62,23 @@ export default async function loginHandler(
     else return next([new SnowAuthError(ERROR_MESSAGES.USER.ACCOUNT_BANNED, 401)]);
   }
 
-  const accessToken = await signTokenAndCreateSession(email, credentials.userId);
-  res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_OPTIONS);
+  await logUserIn(res, credentials, rememberMe);
 
   res.sendStatus(200);
+}
+
+export async function logUserIn(res: Response, credentials: Credentials, shouldRemember: boolean) {
+  const sessionId = await createSession(credentials.userId);
+  res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
+  if (!shouldRemember) return;
+
+  // create remember me token
+  // - upon login create a "remember me" cookie which the client is allowed to keep
+  //   (set max age long time) and is associated with their ip and "device fingerprints"(?)
+  // - the token should include a "token" and "series id" and be saved associated with the user
+  // - hash the "remember me" token when storing it
+  // - when users log in with the "remember me" token, refresh it and overwrite the old one but keep
+  //   the series id
+  // - expire the series id after a long time
+  // - logging out should invalidate the "remember me" token
 }
