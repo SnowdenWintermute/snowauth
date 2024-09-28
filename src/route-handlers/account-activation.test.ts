@@ -1,8 +1,15 @@
 import { Application } from "express";
+import request from "supertest";
 import { valkeyManager } from "../kv-store/client.js";
 import PGTestingContext from "../utils/testing/pg-context.js";
 import setUpTestDatabaseContexts from "../utils/testing/set-up-test-database-contexts.js";
 import buildExpressApp from "../buildExpressApp.js";
+import { ROUTE_NAMES } from "../route-names.js";
+import { ACCESS_TOKEN_COOKIE_NAME } from "../config.js";
+import signTokenAndCreateSession from "../utils/sign-token-and-create-session.js";
+import { createAccountActivationTokenAndSession } from "./account-creation.js";
+
+jest.mock("../emails/send-email.js");
 
 describe("accountActivationHandler", () => {
   const testId = Date.now().toString();
@@ -23,22 +30,29 @@ describe("accountActivationHandler", () => {
     await valkeyManager.context.cleanup();
   });
 
-  it("denies invalid or expired tokens", async () => {});
+  it("denies invalid or expired tokens", async () => {
+    const accountActivationToken = createAccountActivationTokenAndSession("some@email.com", null);
 
-  it("denies valid tokens which do not match a session", async () => {
-    // this would be the case if the token was already used, thus consuming
-    // the account activation session
+    const activationResponse = await request(expressApp).put(ROUTE_NAMES.USERS);
   });
 
-  it("can access user restricted resources after account activation", async () => {
-    //
-  });
+  //it("denies a valid token which has already been used", async () => {
+  //  //
+  //});
 
-  it("allows a user to log in after activation", async () => {
-    //
-  });
+  //it("doesn't change the password of existing credentials with the same email", async () => {
+  //  //
+  //});
 
-  it("allows a user with previously existing credentials to log in with their newly added password after activation", async () => {
-    //
-  });
+  //it("can access user restricted resources after account activation", async () => {
+  //  //
+  //});
+
+  //it("allows a user to log in after activation", async () => {
+  //  //
+  //});
+
+  //it("allows a user with previously existing credentials to log in with their newly added password after activation", async () => {
+  //  //
+  //});
 });

@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import { ROUTE_NAMES } from "./route-names.js";
 import { validate } from "./validation/validate.js";
 import { registerUserSchema } from "./validation/register-user-schema.js";
@@ -13,6 +14,7 @@ import { INCOMING_JSON_DATA_LIMIT } from "./config.js";
 export default function buildExpressApp() {
   const expressApp = express();
   expressApp.use(express.json({ limit: INCOMING_JSON_DATA_LIMIT }));
+  expressApp.use(cookieParser());
 
   expressApp.get("/", (_req, res) => res.send("You have reached the snowauth server"));
   // USEABLE BY ANYONE

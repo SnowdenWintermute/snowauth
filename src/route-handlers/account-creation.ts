@@ -39,8 +39,29 @@ export default async function accountCreationRequestHandler(
     existingUsernameOption = profileOption?.username || null;
   }
 
-  const sessionExpiration = env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION;
+  const accountActivationToken = createAccountActivationTokenAndSession(
+    email,
+    existingUsernameOption
+  );
 
+  const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}`;
+
+  // send them an email
+  sendEmail(
+    email,
+    ACCOUNT_ACTIVATION_SUBJECT,
+    buildAccountActivationText(websiteName, activationPageUrlWithToken),
+    buildAccountActivationHTML(websiteName, activationPageUrlWithToken)
+  );
+
+  res.sendStatus(201);
+}
+
+export function createAccountActivationTokenAndSession(
+  email: string,
+  existingUsernameOption: null | string
+) {
+  const sessionExpiration = env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION;
   const tokenCreatedAt = Date.now();
 
   const accountActivationToken = signJwtSymmetric<AccountActivationTokenPayload>(
@@ -58,15 +79,5 @@ export default async function accountCreationRequestHandler(
     EX: sessionExpiration,
   });
 
-  const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}`;
-
-  // send them an email
-  sendEmail(
-    email,
-    ACCOUNT_ACTIVATION_SUBJECT,
-    buildAccountActivationText(websiteName, activationPageUrlWithToken),
-    buildAccountActivationHTML(websiteName, activationPageUrlWithToken)
-  );
-
-  res.sendStatus(201);
+  return accountActivationToken;
 }
