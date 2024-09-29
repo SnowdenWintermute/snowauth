@@ -91,7 +91,7 @@ describe("accountActivationHandler", () => {
     ).toBeTruthy();
   });
 
-  it("sends back the created user info and valid session id after activating an account", async () => {
+  it("sends back the created user info and user can access a protected resource after activating an account", async () => {
     const email = "some@email.com";
     const username = "some name";
     const { sessionId: accountActivationToken } = await createSession(
@@ -113,7 +113,6 @@ describe("accountActivationHandler", () => {
     expect(activationResponse.body.username).toBe(username);
 
     const protectedResourceResponse = await agent.get(ROUTES.USERS.ROOT + ROUTES.USERS.PROTECTED);
-    console.log(protectedResourceResponse.error);
     expect(protectedResourceResponse.status).toBe(200);
   });
 
@@ -176,10 +175,6 @@ describe("accountActivationHandler", () => {
     if (updatedProfile === undefined) return expect(updatedProfile).toBeDefined();
     expect(updatedProfile.username).not.toBe(attemptedNewUsername);
     expect(updatedProfile.username).toBe(existingUsername);
-  });
-
-  it("can access user restricted resources after account activation", async () => {
-    await request(expressApp).get(ROUTES.USERS.ROOT + ROUTES.USERS.PROTECTED);
   });
 
   //it("allows a user to log in after activation", async () => {
