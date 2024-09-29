@@ -18,7 +18,7 @@ import { userIdsRepo } from "../database/repos/user-ids.js";
 import getSession from "../tokens/get-session.js";
 import { AUTH_SESSION_PREFIX } from "../kv-store/consts.js";
 import handleSuspiciousActivity from "../utils/handle-suspicious-activity.js";
-import { clearSessionCookie } from "../tokens/clear-session-cookie.js";
+import { clearCookie } from "../utils/clear-cookie.js";
 
 export default async function getOrRefreshSession(req: Request, res: Response, next: NextFunction) {
   const { SESSION, USER } = ERROR_MESSAGES;
@@ -35,15 +35,16 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
 
   if (session !== null) {
     res.locals.userId = parseInt(session);
+    return next();
   }
 
   if (rememberMeCookie === undefined) {
-    clearSessionCookie(res);
+    clearCookie(res, SESSION_COOKIE_NAME);
     return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
   }
 
   const validRememberMeCookie = validateRememberMeCookie(rememberMeCookie);
-  if (validateRememberMeCookie === null) {
+  if (validRememberMeCookie === null) {
     handleSuspiciousActivity("SUSPICIOUS ACTIVITY - Malformed remember me cookie provided");
     return next([new SnowAuthError(SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
   }
@@ -99,7 +100,7 @@ export function validateRememberMeCookie(cookie: string) {
     typeof seriesId !== "string" ||
     typeof rememberMeToken !== "string"
   ) {
-    null;
+    return null;
   }
 
   return { seriesId, rememberMeToken };

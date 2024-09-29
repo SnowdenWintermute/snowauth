@@ -3,7 +3,7 @@ import request, { Agent } from "supertest";
 import { valkeyManager } from "../kv-store/client.js";
 import PGTestingContext from "../utils/testing/pg-context.js";
 import setUpTestDatabaseContexts from "../utils/testing/set-up-test-database-contexts.js";
-import buildExpressApp from "../buildExpressApp.js";
+import buildExpressApp from "../build-express-app.js";
 import { ROUTES } from "../route-names.js";
 import createSession from "../tokens/create-session.js";
 import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";

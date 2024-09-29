@@ -8,7 +8,7 @@ import { userIdsRepo } from "../database/repos/user-ids.js";
 import { ROUTES } from "../route-names.js";
 import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
-import buildExpressApp from "../buildExpressApp.js";
+import buildExpressApp from "../build-express-app.js";
 import { Application } from "express";
 
 jest.mock("../emails/send-email.js");

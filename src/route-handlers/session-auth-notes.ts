@@ -34,4 +34,6 @@
 // - when users log in with the "remember me" token, refresh it and overwrite the old one but keep
 //   the series id
 // - expire the series id after a long time
+//
+// WHEN LOGGING OUT
 // - logging out should invalidate the "remember me" token

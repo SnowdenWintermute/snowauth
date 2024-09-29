@@ -10,7 +10,8 @@ import { loginSchema } from "./validation/login-schema.js";
 import errorHandler from "./errors/error-handler.js";
 import { INCOMING_JSON_DATA_LIMIT } from "./config.js";
 import loginWithCredentialsHandler from "./route-handlers/login-with-credentials.js";
-import getUser from "./auth-middleware/get-user.js";
+import getOrRefreshSession from "./auth-middleware/get-or-refresh-session.js";
+import logoutHandler from "./route-handlers/log-out.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -34,15 +35,16 @@ export default function buildExpressApp() {
   // - change password using token in email
   // router.put("/credentials/:password_change_token", validate(changePasswordSchema), changePasswordHandler);
 
-  expressApp.get(USERS.ROOT + USERS.PROTECTED, getUser, (req, res, next) => {
+  // LOGGED IN USERS ONLY ONLY
+  expressApp.use(getOrRefreshSession);
+
+  expressApp.get(USERS.ROOT + USERS.PROTECTED, (req, res, next) => {
     res.sendStatus(200);
   });
-  // LOGGED IN USERS ONLY ONLY
-  // router.use(deserializeUser, refreshSession);
   // - get profile
   // router.get("/users", getProfileHandler);
   // - delete session
-  // router.delete("/sessions", deserializeUser, logoutHandler);
+  expressApp.delete(SESSIONS, logoutHandler);
   // - delete user account
   // router.delete("/users/:user_id", deleteAccountHandler);
 
