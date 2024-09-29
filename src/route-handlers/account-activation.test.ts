@@ -11,8 +11,8 @@ import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { env } from "../utils/load-env-variables.js";
-import { ONE_SECOND } from "../consts.js";
-import { hashToken } from "../tokens/hashing-utils.js";
+import { userIdsRepo } from "../database/repos/user-ids.js";
+import { profilesRepo } from "../database/repos/profiles.js";
 
 jest.mock("../emails/send-email.js");
 
@@ -145,9 +145,32 @@ describe("accountActivationHandler", () => {
     ).toBeTruthy();
   });
 
-  //it("doesn't change the password of existing credentials with the same email", async () => {
-  //  //
-  //});
+  it("doesn't change the username of existing credentials with the same email", async () => {
+    const userIdRecord = await userIdsRepo.insert();
+    const existingUserEmail = "some.existing.user@email.com";
+    const existingUsername = "some existing username";
+    const attemptedNewUsername = "some new username";
+    credentialsRepo.insert(userIdRecord.id, existingUserEmail, "aoeu");
+    profilesRepo.insert(userIdRecord.id, existingUsername);
+
+    const { sessionId: accountActivationToken } = await createSession(
+      ACCOUNT_CREATION_SESSION_PREFIX,
+      existingUserEmail,
+      env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
+    );
+
+    await request(expressApp).put(ROUTE_NAMES.USERS).send({
+      username: attemptedNewUsername,
+      password: "some password",
+      passwordConfirm: "some password",
+      token: accountActivationToken,
+    });
+
+    const updatedProfile = await profilesRepo.findOne("userId", userIdRecord.id);
+    if (updatedProfile === undefined) return expect(updatedProfile).toBeDefined();
+    expect(updatedProfile.username).not.toBe(attemptedNewUsername);
+    expect(updatedProfile.username).toBe(existingUsername);
+  });
 
   //it("can access user restricted resources after account activation", async () => {
   //  //

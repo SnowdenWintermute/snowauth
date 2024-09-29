@@ -15,9 +15,10 @@ export class DatabaseRepository<T> {
 
   async findOne(field: keyof T, value: any): Promise<undefined | T> {
     const snakeCaseField = camelToSnakeCase(field.toString());
-    const { rows } = await this.pgPool.query(
+    const result = await this.pgPool.query(
       format(`SELECT * FROM ${this.tableName} WHERE %I = %L;`, snakeCaseField, value)
     );
+    const { rows } = result;
     if (rows[0]) return toCamelCase(rows)[0] as unknown as T;
     return undefined;
   }
