@@ -28,6 +28,7 @@ export const ERROR_MESSAGES = {
   },
   SESSION: {
     NOT_LOGGED_IN: "You are not logged in",
+    MISSING_TOKEN: "No token was provided",
     INVALID_OR_EXPIRED_TOKEN: "Invalid or expired token",
     EXPIRED: "User session has expired, please log in again",
     USED_OR_EXPIRED_ACCOUNT_CREATION_SESSION:

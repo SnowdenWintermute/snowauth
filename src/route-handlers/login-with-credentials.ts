@@ -12,7 +12,7 @@ import { USER_STATUS } from "../database/db-consts.js";
 import { env } from "../utils/load-env-variables.js";
 import { logUserIn } from "./log-user-in.js";
 
-export default async function loginHandler(
+export default async function loginWithCredentialsHandler(
   req: Request<object, object, LoginUserInput>,
   res: Response,
   next: NextFunction
@@ -32,11 +32,8 @@ export default async function loginHandler(
 
   if (!isValid) {
     const failedLoginAttemptsKey = `${FAILED_LOGIN_ATTEMPTS_PREFIX}${credentials.userId}`;
-    const failedAttempts = await valkeyManager.context.client.incrBy(failedLoginAttemptsKey, 1);
-    await valkeyManager.context.client.expire(
-      failedLoginAttemptsKey,
-      FAILED_LOGIN_COUNTER_EXPIRATION
-    );
+    const failedAttempts = await valkeyManager.context.incrBy(failedLoginAttemptsKey, 1);
+    await valkeyManager.context.expire(failedLoginAttemptsKey, FAILED_LOGIN_COUNTER_EXPIRATION);
     if (failedAttempts < FAILED_LOGIN_COUNTER_TOLERANCE) {
       const remainingAttempts = FAILED_LOGIN_COUNTER_TOLERANCE - failedAttempts;
       const error = new SnowAuthError(

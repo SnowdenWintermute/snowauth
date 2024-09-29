@@ -10,11 +10,18 @@ import createSession from "../tokens/create-session.js";
 import crypto from "crypto";
 import { sessionSeriesRepo } from "../database/repos/session-series.js";
 import { hashToken } from "../tokens/hashing-utils.js";
+import { AUTH_SESSION_PREFIX } from "../kv-store/consts.js";
+import { env } from "../utils/load-env-variables.js";
 
 export async function logUserIn(res: Response, credentials: Credentials, shouldRemember: boolean) {
-  res.setHeader("Cache-Control", 'no-cache="Set-Cookie"');
+  // don't fully understand how this works
+  res.setHeader("Cache-Control", 'no-cache="Set-Cookie", no-store="Set-Cookie"');
 
-  const sessionId = await createSession(credentials.userId);
+  const { sessionId } = await createSession(
+    AUTH_SESSION_PREFIX,
+    credentials.userId,
+    env.SESSION_EXPIRATION
+  );
   res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
   if (!shouldRemember) return;
 

@@ -6,10 +6,10 @@ import { registerUserSchema } from "./validation/register-user-schema.js";
 import accountCreationRequestHandler from "./route-handlers/account-creation.js";
 import accountActivationHandler from "./route-handlers/account-activation.js";
 import { accountActivationSchema } from "./validation/account-activation-schema.js";
-import loginHandler from "./route-handlers/login.js";
 import { loginSchema } from "./validation/login-schema.js";
 import errorHandler from "./errors/error-handler.js";
 import { INCOMING_JSON_DATA_LIMIT } from "./config.js";
+import loginWithCredentialsHandler from "./route-handlers/login-with-credentials.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -25,7 +25,7 @@ export default function buildExpressApp() {
   expressApp.put(ROUTE_NAMES.USERS, validate(accountActivationSchema), accountActivationHandler);
 
   // - login
-  expressApp.post(ROUTE_NAMES.SESSIONS, validate(loginSchema), loginHandler);
+  expressApp.post(ROUTE_NAMES.SESSIONS, validate(loginSchema), loginWithCredentialsHandler);
   // - get change password email
   // router.post("/credentials", passwordResetEmailRequestIpRateLimiter, passwordResetEmailRequestHandler);
   // - change password using token in email

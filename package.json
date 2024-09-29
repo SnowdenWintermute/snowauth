@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "tsc-watch -b --onSuccess \"node dist/index.js\"",
     "migrate": "node-pg-migrate -f pg-migrate-config.json",
-    "test": "jest --no-cache --setupFiles dotenv/config"
+    "test": "jest --no-cache --setupFiles dotenv/config --watch"
   },
   "type": "module",
   "keywords": [],

@@ -2,24 +2,17 @@ import { NextFunction, Request, Response } from "express";
 import { UserRegistrationUserInput } from "../validation/register-user-schema.js";
 import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
-import { signJwtSymmetric } from "../tokens/index.js";
-import { valkeyManager } from "../kv-store/client.js";
 import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
-import { env } from "../utils/load-env-variables.js";
 import { sendEmail } from "../emails/send-email.js";
 import {
   ACCOUNT_ACTIVATION_SUBJECT,
   buildAccountActivationHTML,
   buildAccountActivationText,
 } from "../emails/email-templates.js";
-
-export type AccountActivationTokenPayload = {
-  tokenCreatedAt: number;
-  email: string;
-  existingUsernameOption: null | string;
-};
+import createSession from "../tokens/create-session.js";
+import { env } from "../utils/load-env-variables.js";
 
 export default async function accountCreationRequestHandler(
   req: Request<object, object, UserRegistrationUserInput>,
@@ -39,12 +32,13 @@ export default async function accountCreationRequestHandler(
     existingUsernameOption = profileOption?.username || null;
   }
 
-  const accountActivationToken = createAccountActivationTokenAndSession(
+  const { sessionId: accountActivationToken } = await createSession(
+    ACCOUNT_CREATION_SESSION_PREFIX,
     email,
-    existingUsernameOption
+    env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
   );
 
-  const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}`;
+  const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}/${email}/${existingUsernameOption}`;
 
   // send them an email
   sendEmail(
@@ -55,29 +49,4 @@ export default async function accountCreationRequestHandler(
   );
 
   res.sendStatus(201);
-}
-
-export function createAccountActivationTokenAndSession(
-  email: string,
-  existingUsernameOption: null | string
-) {
-  const sessionExpiration = env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION;
-  const tokenCreatedAt = Date.now();
-
-  const accountActivationToken = signJwtSymmetric<AccountActivationTokenPayload>(
-    // if they have no username the requesting service's frontend can ask them for one
-    { email, existingUsernameOption, tokenCreatedAt },
-    env.ACCOUNT_ACTIVATION_TOKEN_PRIVATE_KEY,
-    {
-      expiresIn: sessionExpiration,
-    }
-  );
-
-  // setting the value of the account creation session as the time the token was created lets us compare
-  // the token creation time with the session time to verify a valid, unused token is being used with this session
-  valkeyManager.context.client.set(`${ACCOUNT_CREATION_SESSION_PREFIX}${email}`, tokenCreatedAt, {
-    EX: sessionExpiration,
-  });
-
-  return accountActivationToken;
 }
