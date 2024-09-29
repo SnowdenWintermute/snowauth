@@ -14,6 +14,7 @@ export const env = cleanEnv(process.env, {
   REMEMBER_ME_TOKEN_EXPIRATION: num(),
   PASSWORD_RESET_TOKEN_EXPIRATION: num(),
   HASHING_PEPPER: str(),
+  SESSION_HASH_KEY: str(),
   SENDGRID_API_KEY: str(),
   SENDGRID_EMAIL_ADDRESS: email(),
 });

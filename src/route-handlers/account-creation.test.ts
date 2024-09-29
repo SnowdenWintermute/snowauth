@@ -4,7 +4,7 @@ import PGTestingContext from "../utils/testing/pg-context.js";
 import setUpTestDatabaseContexts from "../utils/testing/set-up-test-database-contexts.js";
 import { sendEmail } from "../emails/send-email.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
-import { userIdsRepo } from "../database/repos/user_ids.js";
+import { userIdsRepo } from "../database/repos/user-ids.js";
 import { ROUTE_NAMES } from "../route-names.js";
 import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";

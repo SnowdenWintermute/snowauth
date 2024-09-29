@@ -7,7 +7,7 @@ import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { AccountActivationTokenPayload } from "./account-creation.js";
 import { valkeyManager } from "../kv-store/client.js";
 import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
-import { userIdsRepo } from "../database/repos/user_ids.js";
+import { userIdsRepo } from "../database/repos/user-ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 import { env } from "../utils/load-env-variables.js";
