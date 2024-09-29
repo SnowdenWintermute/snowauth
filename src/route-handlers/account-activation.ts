@@ -23,7 +23,6 @@ export default async function accountActivationHandler(
     const hashedToken = hashToken(token);
     const sessionName = `${ACCOUNT_CREATION_SESSION_PREFIX}${hashedToken}`;
     const existingAccountActivationSession = await valkeyManager.context.get(sessionName);
-    console.log("existingAccountActivationSession,: ", existingAccountActivationSession);
 
     if (existingAccountActivationSession === null)
       return next([new SnowAuthError(ERROR_MESSAGES.SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
@@ -58,7 +57,7 @@ export default async function accountActivationHandler(
     }
 
     // log in
-    await logUserIn(res, credentials, false);
+    await logUserIn(res, credentials.userId);
 
     // send this so the client can display the user info
     res.status(201).json({ email, username });

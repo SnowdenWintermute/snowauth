@@ -54,7 +54,7 @@ export default async function loginWithCredentialsHandler(
     else return next([new SnowAuthError(ERROR_MESSAGES.USER.ACCOUNT_BANNED, 401)]);
   }
 
-  await logUserIn(res, credentials, rememberMe);
+  await logUserIn(res, credentials.userId, { shouldRemember: true, existingSessionSeriesId: null });
 
   res.sendStatus(200);
 }

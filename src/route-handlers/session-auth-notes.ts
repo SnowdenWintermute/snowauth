@@ -8,8 +8,19 @@
 
 // WHEN ACCESSING PROTECTED RESOURCES
 // - check if incoming session ids are in a valid form
-// - when user visits with invalid session cookie, set their cookie to be empty and
-//   set it's max age to be in the past
+//
+// - when user visits with expired or missing session cookie
+//   - check for a rememeber me token
+//   - if no remember me token, set their cookie to be empty and set it's max age to be in the past and return unauthorized
+//   - if the remember me token is present but in an invalid form log suspicious activity
+//   - if the remember me token is present and it's series id does not match the associated token in the db, lock the user out
+//   - if the remember me token is present but it is expired
+//       - delete the associated session series from the db
+//       - return unauthorized
+//   - if the remember me token is valid and not expired
+//       - log the user in and grant access to the protected resource
+//         if their role is sufficient to access it, else return unauthorized
+//       - regenerate and overwrite the remember me token but keep the series id with expiration
 
 // WHEN CHANGING PASSWORD
 // - regenerate session id on password changes and role changes, and delete any old ones for that user

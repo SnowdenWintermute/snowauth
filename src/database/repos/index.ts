@@ -30,7 +30,7 @@ export class DatabaseRepository<T> {
     return undefined;
   }
 
-  async delete(id: number) {
+  async delete(id: number | string) {
     const { rows } = await this.pgPool.query(
       `DELETE FROM ${this.tableName} WHERE id = $1 RETURNING *;`,
       [id]

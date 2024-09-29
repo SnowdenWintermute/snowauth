@@ -1,10 +1,10 @@
 import { Application } from "express";
-import request from "supertest";
+import request, { Agent } from "supertest";
 import { valkeyManager } from "../kv-store/client.js";
 import PGTestingContext from "../utils/testing/pg-context.js";
 import setUpTestDatabaseContexts from "../utils/testing/set-up-test-database-contexts.js";
 import buildExpressApp from "../buildExpressApp.js";
-import { ROUTE_NAMES } from "../route-names.js";
+import { ROUTES } from "../route-names.js";
 import createSession from "../tokens/create-session.js";
 import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
@@ -20,6 +20,7 @@ describe("accountActivationHandler", () => {
   const testId = Date.now().toString();
   let pgContext: PGTestingContext;
   let expressApp: Application;
+  let agent: Agent;
 
   beforeAll(async () => {
     pgContext = await setUpTestDatabaseContexts(testId);
@@ -28,6 +29,7 @@ describe("accountActivationHandler", () => {
 
   beforeEach(async () => {
     await valkeyManager.context.removeAllKeys();
+    agent = request.agent(expressApp);
   });
 
   afterAll(async () => {
@@ -43,7 +45,7 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    const activationResponse = await request(expressApp).put(ROUTE_NAMES.USERS).send({
+    const activationResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
       username: "some name",
       password: "some password",
       passwordConfirm: "some password",
@@ -73,7 +75,7 @@ describe("accountActivationHandler", () => {
 
     await valkeyManager.context.expire(sessionName, 0, "LT");
 
-    const activationResponse = await request(expressApp).put(ROUTE_NAMES.USERS).send({
+    const activationResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -89,7 +91,7 @@ describe("accountActivationHandler", () => {
     ).toBeTruthy();
   });
 
-  it("sends back the created user info when activating an account", async () => {
+  it("sends back the created user info and valid session id after activating an account", async () => {
     const email = "some@email.com";
     const username = "some name";
     const { sessionId: accountActivationToken } = await createSession(
@@ -98,7 +100,7 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    const activationResponse = await request(expressApp).put(ROUTE_NAMES.USERS).send({
+    const activationResponse = await agent.put(ROUTES.USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -109,6 +111,10 @@ describe("accountActivationHandler", () => {
 
     expect(activationResponse.body.email).toBe(email);
     expect(activationResponse.body.username).toBe(username);
+
+    const protectedResourceResponse = await agent.get(ROUTES.USERS.ROOT + ROUTES.USERS.PROTECTED);
+    console.log(protectedResourceResponse.error);
+    expect(protectedResourceResponse.status).toBe(200);
   });
 
   it("denies a valid token which has already been used", async () => {
@@ -120,7 +126,7 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    const activationResponse = await request(expressApp).put(ROUTE_NAMES.USERS).send({
+    const activationResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -129,7 +135,7 @@ describe("accountActivationHandler", () => {
 
     expect(activationResponse.status).toBe(201);
 
-    const secondActiationAttemptResponse = await request(expressApp).put(ROUTE_NAMES.USERS).send({
+    const secondActiationAttemptResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -159,7 +165,7 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    await request(expressApp).put(ROUTE_NAMES.USERS).send({
+    await request(expressApp).put(ROUTES.USERS.ROOT).send({
       username: attemptedNewUsername,
       password: "some password",
       passwordConfirm: "some password",
@@ -172,9 +178,9 @@ describe("accountActivationHandler", () => {
     expect(updatedProfile.username).toBe(existingUsername);
   });
 
-  //it("can access user restricted resources after account activation", async () => {
-  //  //
-  //});
+  it("can access user restricted resources after account activation", async () => {
+    await request(expressApp).get(ROUTES.USERS.ROOT + ROUTES.USERS.PROTECTED);
+  });
 
   //it("allows a user to log in after activation", async () => {
   //  //

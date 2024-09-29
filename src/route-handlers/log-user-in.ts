@@ -1,5 +1,4 @@
 import { Response } from "express";
-import { Credentials } from "../database/repos/credentials.js";
 import {
   REMEMBER_ME_COOKIE_NAME,
   REMEMBER_ME_COOKIE_OPTIONS,
@@ -13,23 +12,33 @@ import { hashToken } from "../tokens/hashing-utils.js";
 import { AUTH_SESSION_PREFIX } from "../kv-store/consts.js";
 import { env } from "../utils/load-env-variables.js";
 
-export async function logUserIn(res: Response, credentials: Credentials, shouldRemember: boolean) {
+export async function logUserIn(
+  res: Response,
+  userId: number,
+  options: { shouldRemember: boolean; existingSessionSeriesId: null | string } = {
+    shouldRemember: false,
+    existingSessionSeriesId: null,
+  }
+) {
+  const { shouldRemember, existingSessionSeriesId } = options;
+
   // don't fully understand how this works
   res.setHeader("Cache-Control", 'no-cache="Set-Cookie", no-store="Set-Cookie"');
+  // res.setHeader("Cache-Control", 'no-cache="Set-Cookie"');
 
-  const { sessionId } = await createSession(
-    AUTH_SESSION_PREFIX,
-    credentials.userId,
-    env.SESSION_EXPIRATION
-  );
+  const { sessionId } = await createSession(AUTH_SESSION_PREFIX, userId, env.SESSION_EXPIRATION);
   res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
   if (!shouldRemember) return;
 
-  const sessionSeriesId = await generateSessionSeriesId();
+  const sessionSeriesId = existingSessionSeriesId || (await generateSessionSeriesId());
+
   const token = crypto.randomBytes(16).toString("hex");
   const hashedToken = hashToken(token);
 
-  await sessionSeriesRepo.insert(sessionSeriesId, credentials.userId, hashedToken);
+  const existingSessionSeries = await sessionSeriesRepo.findOne("id", existingSessionSeriesId);
+
+  if (existingSessionSeries) await sessionSeriesRepo.updateToken(hashedToken);
+  else await sessionSeriesRepo.insert(sessionSeriesId, userId, hashedToken);
 
   const rememberMeCookie = JSON.stringify({
     REMEMBER_ME_SERIES_COOKIE_NAME: sessionSeriesId,

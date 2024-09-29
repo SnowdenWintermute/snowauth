@@ -5,7 +5,7 @@ import setUpTestDatabaseContexts from "../utils/testing/set-up-test-database-con
 import { sendEmail } from "../emails/send-email.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { userIdsRepo } from "../database/repos/user-ids.js";
-import { ROUTE_NAMES } from "../route-names.js";
+import { ROUTES } from "../route-names.js";
 import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import buildExpressApp from "../buildExpressApp.js";
@@ -39,7 +39,7 @@ describe("accountCreationHandler", () => {
   });
 
   it("gets error for trying to sign up with an existing email with existing password", async () => {
-    const response = await request(expressApp).post(ROUTE_NAMES.USERS).send({
+    const response = await request(expressApp).post(ROUTES.USERS.ROOT).send({
       email: existingUserEmail,
       websiteName: "test",
       activationPageUrl: "http://test.com",
@@ -55,7 +55,7 @@ describe("accountCreationHandler", () => {
   });
 
   it("allows sign up with an existing email if no existing password", async () => {
-    const response = await request(expressApp).post(ROUTE_NAMES.USERS).send({
+    const response = await request(expressApp).post(ROUTES.USERS.ROOT).send({
       email: existingUserEmailWithNoPassword,
       websiteName: "test",
       activationPageUrl: "http://test.com",
