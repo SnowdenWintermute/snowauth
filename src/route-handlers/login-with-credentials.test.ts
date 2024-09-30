@@ -9,8 +9,6 @@ import createTestUser from "../utils/testing/create-test-user.js";
 import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 
-jest.mock("../emails/send-email.js");
-
 describe("loginWithCredentials", () => {
   const testId = Date.now().toString();
   let pgContext: PGTestingContext;

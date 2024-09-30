@@ -3,6 +3,7 @@ export const RESOURCE_NAMES = {
   USER_IDS: "user_ids",
   CREDENTIALS: "credentials",
   USER_PROFILES: "user_profiles",
+  SESSION_SERIES: "session_series",
 };
 
 export const USER_STATUS = {

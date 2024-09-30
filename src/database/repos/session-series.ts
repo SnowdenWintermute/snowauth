@@ -12,21 +12,32 @@ export type SessionSeries = {
   hashedToken: null | string;
 };
 
-const tableName = RESOURCE_NAMES.USER_PROFILES;
+const tableName = RESOURCE_NAMES.SESSION_SERIES;
 
 class SessionSeriesRepo extends DatabaseRepository<SessionSeries> {
-  async insert(id: string, userId: number, hashedToken: string) {
+  async insert(id: string, userId: number) {
     const { rows } = await this.pgPool.query(
       format(
-        `INSERT INTO ${tableName} (id, user_id, hashed_token) VALUES (%L, %L, %L) RETURNING *;`,
+        `INSERT INTO ${tableName} (id, user_id) VALUES (decode(%L, \'hex\'), %L) RETURNING *;`,
         id,
-        userId,
-        hashedToken
+        userId
       )
     );
 
     if (rows[0]) return toCamelCase(rows)[0] as unknown as SessionSeries;
     console.error(`Failed to insert a new ${tableName} record`);
+    return undefined;
+  }
+
+  async findById(id: string): Promise<SessionSeries | undefined> {
+    const result = await this.pgPool.query(
+      format(
+        `SELECT *, encode(id, \'hex\') as id FROM ${tableName} WHERE id = decode(%L, \'hex\');`,
+        id
+      )
+    );
+    const { rows } = result;
+    if (rows[0]) return toCamelCase(rows)[0] as unknown as SessionSeries;
     return undefined;
   }
 

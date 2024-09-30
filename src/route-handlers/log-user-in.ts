@@ -35,10 +35,17 @@ export async function logUserIn(
   const token = crypto.randomBytes(16).toString("hex");
   const hashedToken = hashToken(token);
 
-  const existingSessionSeries = await sessionSeriesRepo.findOne("id", existingSessionSeriesId);
+  const existingSessionSeries = existingSessionSeriesId
+    ? await sessionSeriesRepo.findById(existingSessionSeriesId)
+    : null;
 
   if (existingSessionSeries) await sessionSeriesRepo.updateToken(hashedToken);
-  else await sessionSeriesRepo.insert(sessionSeriesId, userId, hashedToken);
+  else {
+    const series = await sessionSeriesRepo.insert(sessionSeriesId, userId);
+    console.log("SESSION SERIES INSERTED: ", series);
+    const gotSeries = await sessionSeriesRepo.findById(sessionSeriesId);
+    console.log("GOT SERIES: ", gotSeries);
+  }
 
   const rememberMeCookie = JSON.stringify({
     REMEMBER_ME_SERIES_COOKIE_NAME: sessionSeriesId,

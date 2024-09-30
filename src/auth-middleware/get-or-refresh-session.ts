@@ -50,7 +50,7 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
   }
   const { seriesId, rememberMeToken } = validRememberMeCookie;
 
-  const sessionSeries = await sessionSeriesRepo.findOne("id", seriesId);
+  const sessionSeries = await sessionSeriesRepo.findById(seriesId);
   if (sessionSeries === undefined) return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
 
   if (sessionSeries.hashedToken !== hashToken(rememberMeToken)) {
