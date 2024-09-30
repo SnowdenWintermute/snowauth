@@ -8,9 +8,9 @@ import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
 import { userIdsRepo } from "../database/repos/user-ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { profilesRepo } from "../database/repos/profiles.js";
-import { env } from "../utils/load-env-variables.js";
 import { logUserIn } from "./log-user-in.js";
 import { hashToken } from "../tokens/hashing-utils.js";
+import { ARGON2_OPTIONS } from "../config.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,
@@ -31,11 +31,7 @@ export default async function accountActivationHandler(
 
     const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
 
-    const hashedPassword = await argon2.hash(password, {
-      hashLength: 32,
-      type: argon2.argon2id,
-      secret: Buffer.from(env.HASHING_PEPPER),
-    });
+    const hashedPassword = await argon2.hash(password, ARGON2_OPTIONS);
 
     if (existingCredentials === undefined) {
       const newUserIdRecord = await userIdsRepo.insert();

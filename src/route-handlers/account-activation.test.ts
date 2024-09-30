@@ -11,8 +11,8 @@ import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { env } from "../utils/load-env-variables.js";
-import { userIdsRepo } from "../database/repos/user-ids.js";
 import { profilesRepo } from "../database/repos/profiles.js";
+import createTestUser from "../utils/testing/create-test-user.js";
 
 jest.mock("../emails/send-email.js");
 
@@ -21,6 +21,8 @@ describe("accountActivationHandler", () => {
   let pgContext: PGTestingContext;
   let expressApp: Application;
   let agent: Agent;
+
+  const { SESSIONS, USERS } = ROUTES;
 
   beforeAll(async () => {
     pgContext = await setUpTestDatabaseContexts(testId);
@@ -45,7 +47,7 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    const activationResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
+    const activationResponse = await request(expressApp).put(USERS.ROOT).send({
       username: "some name",
       password: "some password",
       passwordConfirm: "some password",
@@ -75,7 +77,7 @@ describe("accountActivationHandler", () => {
 
     await valkeyManager.context.expire(sessionName, 0, "LT");
 
-    const activationResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
+    const activationResponse = await request(expressApp).put(USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -100,7 +102,7 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    const activationResponse = await agent.put(ROUTES.USERS.ROOT).send({
+    const activationResponse = await agent.put(USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -112,7 +114,7 @@ describe("accountActivationHandler", () => {
     expect(activationResponse.body.email).toBe(email);
     expect(activationResponse.body.username).toBe(username);
 
-    const protectedResourceResponse = await agent.get(ROUTES.USERS.ROOT + ROUTES.USERS.PROTECTED);
+    const protectedResourceResponse = await agent.get(USERS.ROOT + ROUTES.USERS.PROTECTED);
     expect(protectedResourceResponse.status).toBe(200);
   });
 
@@ -125,7 +127,7 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    const activationResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
+    const activationResponse = await request(expressApp).put(USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -134,7 +136,7 @@ describe("accountActivationHandler", () => {
 
     expect(activationResponse.status).toBe(201);
 
-    const secondActiationAttemptResponse = await request(expressApp).put(ROUTES.USERS.ROOT).send({
+    const secondActiationAttemptResponse = await request(expressApp).put(USERS.ROOT).send({
       username,
       password: "some password",
       passwordConfirm: "some password",
@@ -151,12 +153,10 @@ describe("accountActivationHandler", () => {
   });
 
   it("doesn't change the username of existing credentials with the same email", async () => {
-    const userIdRecord = await userIdsRepo.insert();
     const existingUserEmail = "some.existing.user@email.com";
     const existingUsername = "some existing username";
+    const existingUser = await createTestUser(existingUserEmail, existingUsername);
     const attemptedNewUsername = "some new username";
-    credentialsRepo.insert(userIdRecord.id, existingUserEmail, "aoeu");
-    profilesRepo.insert(userIdRecord.id, existingUsername);
 
     const { sessionId: accountActivationToken } = await createSession(
       ACCOUNT_CREATION_SESSION_PREFIX,
@@ -164,24 +164,64 @@ describe("accountActivationHandler", () => {
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    await request(expressApp).put(ROUTES.USERS.ROOT).send({
+    await request(expressApp).put(USERS.ROOT).send({
       username: attemptedNewUsername,
       password: "some password",
       passwordConfirm: "some password",
       token: accountActivationToken,
     });
 
-    const updatedProfile = await profilesRepo.findOne("userId", userIdRecord.id);
+    const updatedProfile = await profilesRepo.findOne("userId", existingUser.id);
     if (updatedProfile === undefined) return expect(updatedProfile).toBeDefined();
     expect(updatedProfile.username).not.toBe(attemptedNewUsername);
     expect(updatedProfile.username).toBe(existingUsername);
   });
 
-  //it("allows a user to log in after activation", async () => {
-  //  //
-  //});
+  it("allows a user to log in after activation", async () => {
+    const email = "will.try.log.in@email.com";
+    const username = "will.try.log.in";
+    const password = "some password";
+    const { sessionId: accountActivationToken } = await createSession(
+      ACCOUNT_CREATION_SESSION_PREFIX,
+      email,
+      env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
+    );
 
-  //it("allows a user with previously existing credentials to log in with their newly added password after activation", async () => {
-  //  //
-  //});
+    await request(expressApp).put(USERS.ROOT).send({
+      username,
+      password,
+      passwordConfirm: password,
+      token: accountActivationToken,
+    });
+
+    const loginResponse = await request(expressApp).post(SESSIONS).send({ email, password });
+    expect(loginResponse.status).toBe(201);
+  });
+
+  it("allows a user with previously existing credentials to log in with their newly added password after activation", async () => {
+    const email = "some.existing.user.2@email.com";
+    const username = "some existing username 2";
+    // the user has no password at first
+    await createTestUser(email, username);
+
+    const { sessionId: accountActivationToken } = await createSession(
+      ACCOUNT_CREATION_SESSION_PREFIX,
+      email,
+      env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
+    );
+
+    const passwordToAdd = "some password";
+
+    await request(expressApp).put(USERS.ROOT).send({
+      username,
+      password: passwordToAdd,
+      passwordConfirm: passwordToAdd,
+      token: accountActivationToken,
+    });
+
+    const loginResponse = await request(expressApp)
+      .post(SESSIONS)
+      .send({ email, password: passwordToAdd });
+    expect(loginResponse.status).toBe(201);
+  });
 });
