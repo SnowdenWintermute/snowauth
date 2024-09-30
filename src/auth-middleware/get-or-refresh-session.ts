@@ -22,7 +22,6 @@ import { clearCookie } from "../utils/clear-cookie.js";
 
 export default async function getOrRefreshSession(req: Request, res: Response, next: NextFunction) {
   const { SESSION, USER } = ERROR_MESSAGES;
-
   const sessionId = req.cookies[SESSION_COOKIE_NAME];
   const rememberMeCookie = req.cookies[REMEMBER_ME_COOKIE_NAME];
 
@@ -53,6 +52,9 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
   const sessionSeries = await sessionSeriesRepo.findById(seriesId);
   if (sessionSeries === undefined) return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
 
+  console.log("sessionSeries", sessionSeries);
+  console.log("sessionSeries.hashedToken", sessionSeries.hashedToken);
+  console.log("hashToken(rememberMeToken)", hashToken(rememberMeToken));
   if (sessionSeries.hashedToken !== hashToken(rememberMeToken)) {
     handleSuspiciousActivity("SUSPICIOUS ACTIVITY - series session id and token mismatch");
     const profile = await profilesRepo.findOne("userId", sessionSeries.userId);
@@ -79,7 +81,7 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
     return next([new SnowAuthError(USER.DOES_NOT_EXIST, 404)]);
   }
 
-  logUserIn(res, sessionSeries.userId, {
+  await logUserIn(res, sessionSeries.userId, {
     shouldRemember: true,
     existingSessionSeriesId: sessionSeries.id,
   });
@@ -90,10 +92,13 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
 
 export function validateRememberMeCookie(cookie: string) {
   const parsedCookie = JSON.parse(cookie);
+  console.log("parsedCookie", parsedCookie);
   const seriesId = parsedCookie[REMEMBER_ME_SERIES_COOKIE_NAME];
+  console.log("seriesId", seriesId);
   const rememberMeToken = parsedCookie[REMEMBER_ME_TOKEN_COOKIE_NAME];
   const seriesIdIsValid = isValidSnowAuthRandomHex(seriesId);
   const rememberMeTokenIsValid = isValidSnowAuthRandomHex(rememberMeToken);
+  console.log("rememberMeTokenIsValid", rememberMeTokenIsValid);
   if (
     !seriesIdIsValid ||
     !rememberMeTokenIsValid ||

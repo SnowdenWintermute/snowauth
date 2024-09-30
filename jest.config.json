@@ -1,5 +1,5 @@
 {
-  "testTimeout": 5000,
+  "testTimeout": 2000,
   "preset": "ts-jest",
   "testEnvironment": "node",
   "modulePathIgnorePatterns": ["<rootDir>/dist/"],

@@ -6,7 +6,8 @@ import { ROUTES } from "../route-names.js";
 import buildExpressApp from "../build-express-app.js";
 import { Application } from "express";
 import createTestUser from "../utils/testing/create-test-user.js";
-import { SESSION_COOKIE_NAME } from "../config.js";
+import { REMEMBER_ME_COOKIE_NAME, SESSION_COOKIE_NAME } from "../config.js";
+import { CookieAccessInfo } from "cookiejar";
 
 describe("getOrRefreshSession", () => {
   const testId = Date.now().toString();
@@ -51,28 +52,42 @@ describe("getOrRefreshSession", () => {
       .post(SESSIONS)
       .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
 
-    agent.jar.setCookie(`${SESSION_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`);
+    // HOW TO DELETE A COOKIE PROPERLY
+    agent.jar.setCookie(`${SESSION_COOKIE_NAME}=;`, "127.0.0.1", "/");
 
     const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
     expect(protectedResponse.status).toBe(200);
   });
 
-  // it(`${allowsText} they present an expired session cookie but present a valid remember me cookie`, async () => {
-  //   const loginResponse = await agent
-  //     .post(SESSIONS)
-  //     .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
+  it(`${allowsText} they present an expired session cookie but present a valid remember me cookie`, async () => {
+    await agent
+      .post(SESSIONS)
+      .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
 
-  //   const cookieValue = agent.jar.getCookie("cookieName", {
-  //     path: "/",
-  //     domain: "localhost",
-  //     secure: false,
-  //     script: true,
-  //   });
-  //   console.log("COOKIE VALUE: ", cookieValue);
+    // all sessions are now expired
+    await valkeyManager.context.removeAllKeys();
 
-  //   const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
-  //   expect(protectedResponse.status).toBe(200);
-  // });
+    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    expect(protectedResponse.status).toBe(200);
+  });
+
+  it(`repeatedly ${allowsText} they present expired session cookies and valid remember me cookies`, async () => {
+    await agent
+      .post(SESSIONS)
+      .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
+
+    // all sessions are now expired
+    await valkeyManager.context.removeAllKeys();
+
+    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    expect(protectedResponse.status).toBe(200);
+
+    // all sessions are now expired
+    await valkeyManager.context.removeAllKeys();
+
+    const secondProtectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    expect(secondProtectedResponse.status).toBe(200);
+  });
 
   // const forbidsText = "forbids a user to access a protected resource if";
   // const sessionCookieMissing = "their session cookie is missing";

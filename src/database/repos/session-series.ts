@@ -15,12 +15,13 @@ export type SessionSeries = {
 const tableName = RESOURCE_NAMES.SESSION_SERIES;
 
 class SessionSeriesRepo extends DatabaseRepository<SessionSeries> {
-  async insert(id: string, userId: number) {
+  async insert(id: string, userId: number, hashedToken: string) {
     const { rows } = await this.pgPool.query(
       format(
-        `INSERT INTO ${tableName} (id, user_id) VALUES (decode(%L, \'hex\'), %L) RETURNING *;`,
+        `INSERT INTO ${tableName} (id, user_id, hashed_token) VALUES (%L, %L, decode(%L, \'hex\')) RETURNING *;`,
         id,
-        userId
+        userId,
+        hashedToken
       )
     );
 
@@ -32,7 +33,7 @@ class SessionSeriesRepo extends DatabaseRepository<SessionSeries> {
   async findById(id: string): Promise<SessionSeries | undefined> {
     const result = await this.pgPool.query(
       format(
-        `SELECT *, encode(id, \'hex\') as id FROM ${tableName} WHERE id = decode(%L, \'hex\');`,
+        `SELECT *, encode(hashed_token, \'hex\') as hashed_token FROM ${tableName} WHERE id = %L;`,
         id
       )
     );
@@ -41,9 +42,13 @@ class SessionSeriesRepo extends DatabaseRepository<SessionSeries> {
     return undefined;
   }
 
-  async updateToken(token: string) {
+  async updateToken(id: string, token: string) {
     const { rows } = await this.pgPool.query(
-      format(`UPDATE ${tableName} SET token = %L WHERE id = %L RETURNING *;`, token)
+      format(
+        `UPDATE ${tableName} SET hashed_token = decode(%L, \'hex\') WHERE id = %L RETURNING *;`,
+        token,
+        id
+      )
     );
 
     if (rows[0]) return toCamelCase(rows)[0] as unknown as SessionSeries;
