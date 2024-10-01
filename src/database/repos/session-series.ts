@@ -54,6 +54,14 @@ class SessionSeriesRepo extends DatabaseRepository<SessionSeries> {
     if (rows[0]) return toCamelCase(rows)[0] as unknown as SessionSeries;
     return undefined;
   }
+
+  async delete(id: string) {
+    const { rows } = await this.pgPool.query(
+      format(`DELETE FROM ${tableName} WHERE id = %L RETURNING *;`, id)
+    );
+    if (rows[0]) return toCamelCase(rows)[0] as unknown as SessionSeries;
+    return undefined;
+  }
 }
 
 export const sessionSeriesRepo = new SessionSeriesRepo(pgPool, RESOURCE_NAMES.USER_PROFILES);

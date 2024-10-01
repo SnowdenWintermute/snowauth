@@ -34,8 +34,7 @@ export class DatabaseRepository<T> {
 
   async delete(id: number | string) {
     const { rows } = await this.pgPool.query(
-      `DELETE FROM ${this.tableName} WHERE id = $1 RETURNING *;`,
-      [id]
+      format(`DELETE FROM ${this.tableName} WHERE id = %L RETURNING *;`, id)
     );
     if (rows[0]) return toCamelCase(rows)[0] as unknown as T;
     return undefined;

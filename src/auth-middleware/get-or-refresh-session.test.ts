@@ -133,15 +133,25 @@ describe("getOrRefreshSession", () => {
     parsed["rmid"] = mismatchedToken;
     const asString = JSON.stringify(parsed);
     const asURI = encodeURIComponent(asString);
-    console.log(parsed);
-    console.log(asURI);
     agent.jar.setCookie(`${SESSION_COOKIE_NAME}=;`, "127.0.0.1", "/");
     agent.jar.setCookie(`${REMEMBER_ME_COOKIE_NAME}=${asURI};`, "127.0.0.1", "/");
     const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
-    console.log(protectedResponse.error);
+
     expect(protectedResponse.status).toBe(401);
     expect(
       responseBodyIncludesCustomErrorMessage(protectedResponse, ERROR_MESSAGES.USER.ACCOUNT_LOCKED)
+    );
+
+    const loginResponseAfterLockout = await agent
+      .post(SESSIONS)
+      .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
+
+    expect(loginResponseAfterLockout.status).toBe(401);
+    expect(
+      responseBodyIncludesCustomErrorMessage(
+        loginResponseAfterLockout,
+        ERROR_MESSAGES.USER.ACCOUNT_LOCKED
+      )
     );
   });
 });

@@ -18,7 +18,7 @@ export default async function logoutHandler(req: Request, res: Response, next: N
   const validRememberMeCookie = validateRememberMeCookie(rememberMeCookie);
   if (validRememberMeCookie !== null) {
     const { seriesId } = validRememberMeCookie;
-    await sessionSeriesRepo.delete(seriesId);
+    await sessionSeriesRepo.delete(seriesId.toString());
   }
 
   return res.sendStatus(200);

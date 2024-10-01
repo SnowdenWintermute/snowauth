@@ -28,7 +28,10 @@ export default async function loginWithCredentialsHandler(
   });
 
   const profile = await profilesRepo.findOne("userId", credentials.userId);
-  if (!profile) return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.INVALID, 401)]);
+  if (!profile) {
+    console.error(ERROR_MESSAGES.USER.MISSING_PROFLIE);
+    return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
+  }
 
   if (!isValid) {
     const failedLoginAttemptsKey = `${FAILED_LOGIN_ATTEMPTS_PREFIX}${credentials.userId}`;
@@ -46,6 +49,10 @@ export default async function loginWithCredentialsHandler(
     profile.status = USER_STATUS.LOCKED_OUT;
     await profilesRepo.update(profile);
     return next([new SnowAuthError(ERROR_MESSAGES.RATE_LIMITER.TOO_MANY_FAILED_LOGINS, 401)]);
+  }
+
+  if (profile.status === USER_STATUS.LOCKED_OUT) {
+    return next([new SnowAuthError(ERROR_MESSAGES.USER.ACCOUNT_LOCKED, 401)]);
   }
 
   if (profile.status === USER_STATUS.BANNED) {
