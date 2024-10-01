@@ -32,7 +32,7 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
     return next([new SnowAuthError(SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
   }
 
-  const session = await getSession(AUTH_SESSION_PREFIX, sessionId || "");
+  const { session } = await getSession(AUTH_SESSION_PREFIX, sessionId || "");
 
   if (session !== null) {
     res.locals.userId = parseInt(session);

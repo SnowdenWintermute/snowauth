@@ -25,6 +25,7 @@ export const ERROR_MESSAGES = {
       "No token provided - use the link in your email to get a page with a token",
     PASSWORD_RESET_EMAIL_DOES_NOT_MATCH_TOKEN:
       "The provided email address did not match with the password reset token",
+    MISSING: "Failed to find a credential entry that was expected to exist",
   },
   SESSION: {
     NOT_LOGGED_IN: "You are not logged in",

@@ -1,27 +1,24 @@
 import { Request, Response, NextFunction } from "express";
 import * as argon2 from "argon2";
-import { AccountActivationUserInput } from "../validation/account-activation-schema.js";
 import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { valkeyManager } from "../kv-store/client.js";
-import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
-import { userIdsRepo } from "../database/repos/user-ids.js";
+import { PASSWORD_RESET_SESSION_PREFIX } from "../kv-store/consts.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
-import { profilesRepo } from "../database/repos/profiles.js";
-import { logUserIn } from "./log-user-in.js";
 import { ARGON2_OPTIONS } from "../config.js";
 import getSession from "../tokens/get-session.js";
+import { ChangePasswordUserInput } from "../validation/change-password-schema.js";
 
-export default async function accountActivationHandler(
-  req: Request<object, object, AccountActivationUserInput>,
+export default async function changePasswordHandler(
+  req: Request<object, object, ChangePasswordUserInput>,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const { token, username, password } = req.body;
+    const { token, password } = req.body;
 
     const { session: existingSession, sessionName } = await getSession(
-      ACCOUNT_CREATION_SESSION_PREFIX,
+      PASSWORD_RESET_SESSION_PREFIX,
       token
     );
 
@@ -32,18 +29,14 @@ export default async function accountActivationHandler(
 
     const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
 
+    if (existingCredentials === undefined) {
+      console.log(ERROR_MESSAGES.CREDENTIALS.MISSING);
+      return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
+    }
+
     const hashedPassword = await argon2.hash(password, ARGON2_OPTIONS);
 
-    if (existingCredentials === undefined) {
-      const newUserIdRecord = await userIdsRepo.insert();
-      await credentialsRepo.insert(newUserIdRecord.id, email, hashedPassword);
-      await profilesRepo.insert(newUserIdRecord.id, username);
-    } else {
-      await credentialsRepo.updatePassword(existingCredentials.id, hashedPassword);
-      // don't update their username here, if they already have an account from a
-      // third party id provider we will get their initial username in a different
-      // dedicated route handler
-    }
+    await credentialsRepo.updatePassword(existingCredentials.userId, hashedPassword);
 
     valkeyManager.context.del(sessionName);
 
@@ -53,11 +46,7 @@ export default async function accountActivationHandler(
       return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
     }
 
-    // log in
-    await logUserIn(res, credentials.userId);
-
-    // send this so the client can display the user info
-    res.status(201).json({ email, username });
+    res.sendStatus(201);
   } catch (error: any) {
     const errors = [];
     if (error.schema && error.detail) {
