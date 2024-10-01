@@ -25,7 +25,9 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
   const sessionId = req.cookies[SESSION_COOKIE_NAME];
   const rememberMeCookie = req.cookies[REMEMBER_ME_COOKIE_NAME];
 
-  if (sessionId !== undefined && !isValidSnowAuthRandomHex(sessionId)) {
+  // intentionally checking for "truthyness" of sessionId to account for empty string
+  // as well as undefined
+  if (sessionId && !isValidSnowAuthRandomHex(sessionId)) {
     handleSuspiciousActivity("SUSPICIOUS ACTIVITY - Malformed session id provided");
     return next([new SnowAuthError(SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
   }
@@ -52,9 +54,6 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
   const sessionSeries = await sessionSeriesRepo.findById(seriesId);
   if (sessionSeries === undefined) return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
 
-  console.log("sessionSeries", sessionSeries);
-  console.log("sessionSeries.hashedToken", sessionSeries.hashedToken);
-  console.log("hashToken(rememberMeToken)", hashToken(rememberMeToken));
   if (sessionSeries.hashedToken !== hashToken(rememberMeToken)) {
     handleSuspiciousActivity("SUSPICIOUS ACTIVITY - series session id and token mismatch");
     const profile = await profilesRepo.findOne("userId", sessionSeries.userId);
@@ -65,8 +64,9 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
     return next([new SnowAuthError(USER.ACCOUNT_LOCKED, 401)]);
   }
 
-  const sessionSeriesIsExpired =
-    Date.now() - +sessionSeries.createdAt >= env.REMEMBER_ME_TOKEN_EXPIRATION;
+  const sessionSeriesAge = Date.now() - +sessionSeries.createdAt;
+  console.log("sessionSeriesAge: ", sessionSeriesAge, env.REMEMBER_ME_TOKEN_EXPIRATION);
+  const sessionSeriesIsExpired = sessionSeriesAge >= env.REMEMBER_ME_TOKEN_EXPIRATION;
 
   if (sessionSeriesIsExpired) {
     sessionSeriesRepo.delete(sessionSeries.id);
@@ -91,22 +91,23 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
 }
 
 export function validateRememberMeCookie(cookie: string) {
-  const parsedCookie = JSON.parse(cookie);
-  console.log("parsedCookie", parsedCookie);
-  const seriesId = parsedCookie[REMEMBER_ME_SERIES_COOKIE_NAME];
-  console.log("seriesId", seriesId);
-  const rememberMeToken = parsedCookie[REMEMBER_ME_TOKEN_COOKIE_NAME];
-  const seriesIdIsValid = isValidSnowAuthRandomHex(seriesId);
-  const rememberMeTokenIsValid = isValidSnowAuthRandomHex(rememberMeToken);
-  console.log("rememberMeTokenIsValid", rememberMeTokenIsValid);
-  if (
-    !seriesIdIsValid ||
-    !rememberMeTokenIsValid ||
-    typeof seriesId !== "string" ||
-    typeof rememberMeToken !== "string"
-  ) {
+  try {
+    const parsedCookie = JSON.parse(cookie);
+    const seriesId = parsedCookie[REMEMBER_ME_SERIES_COOKIE_NAME];
+    const rememberMeToken = parsedCookie[REMEMBER_ME_TOKEN_COOKIE_NAME];
+    const seriesIdIsValid = isValidSnowAuthRandomHex(seriesId);
+    const rememberMeTokenIsValid = isValidSnowAuthRandomHex(rememberMeToken);
+    if (
+      !seriesIdIsValid ||
+      !rememberMeTokenIsValid ||
+      typeof seriesId !== "string" ||
+      typeof rememberMeToken !== "string"
+    ) {
+      return null;
+    }
+
+    return { seriesId, rememberMeToken };
+  } catch (err) {
     return null;
   }
-
-  return { seriesId, rememberMeToken };
 }

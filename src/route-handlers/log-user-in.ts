@@ -51,6 +51,8 @@ export async function logUserIn(
     [REMEMBER_ME_TOKEN_COOKIE_NAME]: token,
   });
 
+  console.log("rememberMeCookie", rememberMeCookie);
+
   res.cookie(REMEMBER_ME_COOKIE_NAME, rememberMeCookie, REMEMBER_ME_COOKIE_OPTIONS);
 }
 

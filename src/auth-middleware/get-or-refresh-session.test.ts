@@ -7,7 +7,11 @@ import buildExpressApp from "../build-express-app.js";
 import { Application } from "express";
 import createTestUser from "../utils/testing/create-test-user.js";
 import { REMEMBER_ME_COOKIE_NAME, SESSION_COOKIE_NAME } from "../config.js";
-import { CookieAccessInfo } from "cookiejar";
+import crypto from "crypto";
+import { env } from "../utils/load-env-variables.js";
+import { setDateNowReturnValue } from "../utils/testing/set-date-now-return-value.js";
+import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
+import { ERROR_MESSAGES } from "../errors/error-messages.js";
 
 describe("getOrRefreshSession", () => {
   const testId = Date.now().toString();
@@ -18,17 +22,20 @@ describe("getOrRefreshSession", () => {
   const existingUserUsername = "existing";
   const existingUserPassword = "some password";
   const { SESSIONS, USERS } = ROUTES;
+  const realDateNow = Date.now.bind(global.Date);
 
   beforeAll(async () => {
     pgContext = await setUpTestDatabaseContexts(testId);
     expressApp = buildExpressApp();
-    // set up an existing user
     await createTestUser(existingUserEmail, existingUserUsername, existingUserPassword);
   });
 
   beforeEach(async () => {
     await valkeyManager.context.removeAllKeys();
     agent = request.agent(expressApp);
+    // reset Date.now() to it's original value in case we changed it
+    // during the test to "time travel"
+    global.Date.now = realDateNow;
   });
 
   afterAll(async () => {
@@ -59,18 +66,6 @@ describe("getOrRefreshSession", () => {
     expect(protectedResponse.status).toBe(200);
   });
 
-  it(`${allowsText} they present an expired session cookie but present a valid remember me cookie`, async () => {
-    await agent
-      .post(SESSIONS)
-      .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
-
-    // all sessions are now expired
-    await valkeyManager.context.removeAllKeys();
-
-    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
-    expect(protectedResponse.status).toBe(200);
-  });
-
   it(`repeatedly ${allowsText} they present expired session cookies and valid remember me cookies`, async () => {
     await agent
       .post(SESSIONS)
@@ -89,16 +84,64 @@ describe("getOrRefreshSession", () => {
     expect(secondProtectedResponse.status).toBe(200);
   });
 
-  // const forbidsText = "forbids a user to access a protected resource if";
-  // const sessionCookieMissing = "their session cookie is missing";
+  const forbidsText = "forbids a user to access a protected resource if";
+  const sessionCookieMissing = "their session cookie is missing";
 
-  // it(`${forbidsText} ${sessionCookieMissing} and they present no remember me cookie`, async () => {});
+  it(`${forbidsText} ${sessionCookieMissing} and they present no remember me cookie`, async () => {
+    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    expect(protectedResponse.status).toBe(401);
+  });
 
-  // it(`${forbidsText} ${sessionCookieMissing} and they present an expired remember me cookie`, async () => {});
+  it(`${forbidsText} ${sessionCookieMissing} and they present an expired remember me cookie`, async () => {
+    await agent
+      .post(SESSIONS)
+      .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
 
-  // it(`${forbidsText} they present a malformed session cookie`, async () => {});
+    agent.jar.setCookie(`${SESSION_COOKIE_NAME}=;`, "127.0.0.1", "/");
 
-  // it(`${forbidsText} ${sessionCookieMissing} and they present a malformed remember me cookie`, async () => {});
+    setDateNowReturnValue(Date.now() + env.REMEMBER_ME_TOKEN_EXPIRATION);
 
-  // it(`${forbidsText} they present a consumed/used remember me cookie AND locks their account`, async () => {});
+    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    expect(protectedResponse.status).toBe(401);
+  });
+
+  it(`${forbidsText} they present a malformed session cookie`, async () => {
+    agent.jar.setCookie(`${SESSION_COOKIE_NAME}=an invalid token;`, "127.0.0.1", "/");
+
+    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    expect(protectedResponse.status).toBe(401);
+  });
+
+  it(`${forbidsText} ${sessionCookieMissing} and they present a malformed remember me cookie`, async () => {
+    agent.jar.setCookie(`${REMEMBER_ME_COOKIE_NAME}=an invalid token;`, "127.0.0.1", "/");
+
+    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    expect(protectedResponse.status).toBe(401);
+  });
+
+  it(`${forbidsText} they present a mismatched remember me cookie AND locks their account`, async () => {
+    const loginResponse = await agent
+      .post(SESSIONS)
+      .send({ email: existingUserEmail, password: existingUserPassword, rememberMe: true });
+    const rememberMeCookie = loginResponse.headers["set-cookie"]![1];
+    const decoded = decodeURIComponent(rememberMeCookie!);
+    const firstSemicolonIndex = decoded.indexOf(";");
+    const asJson = decoded.slice(3, firstSemicolonIndex);
+    const parsed = JSON.parse(asJson);
+
+    const mismatchedToken = crypto.randomBytes(16).toString("hex");
+    parsed["rmid"] = mismatchedToken;
+    const asString = JSON.stringify(parsed);
+    const asURI = encodeURIComponent(asString);
+    console.log(parsed);
+    console.log(asURI);
+    agent.jar.setCookie(`${SESSION_COOKIE_NAME}=;`, "127.0.0.1", "/");
+    agent.jar.setCookie(`${REMEMBER_ME_COOKIE_NAME}=${asURI};`, "127.0.0.1", "/");
+    const protectedResponse = await agent.get(USERS.ROOT + USERS.PROTECTED);
+    console.log(protectedResponse.error);
+    expect(protectedResponse.status).toBe(401);
+    expect(
+      responseBodyIncludesCustomErrorMessage(protectedResponse, ERROR_MESSAGES.USER.ACCOUNT_LOCKED)
+    );
+  });
 });
