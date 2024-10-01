@@ -12,13 +12,15 @@ import { INCOMING_JSON_DATA_LIMIT } from "./config.js";
 import loginWithCredentialsHandler from "./route-handlers/login-with-credentials.js";
 import getOrRefreshSession from "./auth-middleware/get-or-refresh-session.js";
 import logoutHandler from "./route-handlers/log-out.js";
+import requestPasswordResetEmailHandler from "./route-handlers/password-reset-email-request.js";
+import { passwordResetEmailRequestSchema } from "./validation/password-reset-email-request-schema.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
   expressApp.use(express.json({ limit: INCOMING_JSON_DATA_LIMIT }));
   expressApp.use(cookieParser());
 
-  const { USERS, SESSIONS } = ROUTES;
+  const { USERS, SESSIONS, CREDENTIALS } = ROUTES;
 
   expressApp.get("/", (_req, res) => res.send("You have reached the snowauth server"));
   // USEABLE BY ANYONE
@@ -31,7 +33,11 @@ export default function buildExpressApp() {
   // - login
   expressApp.post(SESSIONS, validate(loginSchema), loginWithCredentialsHandler);
   // - get change password email
-  // router.post("/credentials", passwordResetEmailRequestIpRateLimiter, passwordResetEmailRequestHandler);
+  expressApp.post(
+    CREDENTIALS.ROOT,
+    validate(passwordResetEmailRequestSchema),
+    /* passwordResetEmailRequestIpRateLimiter */ requestPasswordResetEmailHandler
+  );
   // - change password using token in email
   // router.put("/credentials/:password_change_token", validate(changePasswordSchema), changePasswordHandler);
 

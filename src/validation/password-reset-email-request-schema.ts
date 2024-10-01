@@ -14,7 +14,7 @@ export const passwordResetEmailRequestSchema = object({
   }),
 });
 
-// export type RegisterUserSchema = z.infer<typeof passwordResetEmailRequestSchema>;
+export type PasswordResetEmailRequestSchema = z.infer<typeof passwordResetEmailRequestSchema>;
 export type PasswordResetEmailRequestUserInput = TypeOf<
   typeof passwordResetEmailRequestSchema
 >["body"];

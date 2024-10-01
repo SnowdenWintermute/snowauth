@@ -3,6 +3,8 @@ export const ROUTES = {
     ROOT: "/users",
     PROTECTED: "/protected",
   },
-  CREDENTIALS: "/credentials",
+  CREDENTIALS: {
+    ROOT: "/credentials",
+  },
   SESSIONS: "/sessions",
 };

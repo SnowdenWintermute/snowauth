@@ -65,7 +65,7 @@ export default async function getOrRefreshSession(req: Request, res: Response, n
   }
 
   const sessionSeriesAge = Date.now() - +sessionSeries.createdAt;
-  console.log("sessionSeriesAge: ", sessionSeriesAge, env.REMEMBER_ME_TOKEN_EXPIRATION);
+
   const sessionSeriesIsExpired = sessionSeriesAge >= env.REMEMBER_ME_TOKEN_EXPIRATION;
 
   if (sessionSeriesIsExpired) {

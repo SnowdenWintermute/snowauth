@@ -8,8 +8,7 @@ import { profilesRepo } from "../database/repos/profiles.js";
 import { sendEmail } from "../emails/send-email.js";
 import {
   ACCOUNT_ACTIVATION_SUBJECT,
-  buildAccountActivationHTML,
-  buildAccountActivationText,
+  buildAccountActivationEmail,
 } from "../emails/email-templates.js";
 import createSession from "../tokens/create-session.js";
 import { env } from "../utils/load-env-variables.js";
@@ -44,8 +43,8 @@ export default async function accountCreationRequestHandler(
   sendEmail(
     email,
     ACCOUNT_ACTIVATION_SUBJECT,
-    buildAccountActivationText(websiteName, activationPageUrlWithToken),
-    buildAccountActivationHTML(websiteName, activationPageUrlWithToken)
+    buildAccountActivationEmail(websiteName, activationPageUrlWithToken, false),
+    buildAccountActivationEmail(websiteName, activationPageUrlWithToken, true)
   );
 
   res.sendStatus(201);

@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import { credentialsRepo } from "../database/repos/credentials";
-import SnowAuthError from "../errors/custom-error";
-import { ERROR_MESSAGES } from "../errors/error-messages";
-import { profilesRepo } from "../database/repos/profiles";
-import { USER_STATUS } from "../database/db-consts";
-import { PASSWORD_RESET_SESSION_PREFIX } from "../kv-store/consts";
-import createSession from "../tokens/create-session";
-import { env } from "../utils/load-env-variables";
-import { PasswordResetEmailRequestUserInput } from "../validation/password-reset-email-request-schema";
+import { credentialsRepo } from "../database/repos/credentials.js";
+import SnowAuthError from "../errors/custom-error.js";
+import { ERROR_MESSAGES } from "../errors/error-messages.js";
+import { profilesRepo } from "../database/repos/profiles.js";
+import { USER_STATUS } from "../database/db-consts.js";
+import { PASSWORD_RESET_SESSION_PREFIX } from "../kv-store/consts.js";
+import createSession from "../tokens/create-session.js";
+import { env } from "../utils/load-env-variables.js";
+import { PasswordResetEmailRequestUserInput } from "../validation/password-reset-email-request-schema.js";
+import { sendEmail } from "../emails/send-email.js";
+import { buildPasswordResetEmail, PASSWORD_RESET_SUBJECT } from "../emails/email-templates.js";
 
 export default async function requestPasswordResetEmailHandler(
   req: Request<object, object, PasswordResetEmailRequestUserInput>,
@@ -27,17 +29,20 @@ export default async function requestPasswordResetEmailHandler(
   if (profile.status === USER_STATUS.BANNED)
     return next([new SnowAuthError(ERROR_MESSAGES.USER.ACCOUNT_BANNED, 401)]);
 
-  const { sessionId: accountActivationToken } = await createSession(
+  const { sessionId: passwordResetToken } = await createSession(
     PASSWORD_RESET_SESSION_PREFIX,
     credentials.emailAddress,
     env.PASSWORD_RESET_SESSION_EXPIRATION
   );
 
-  const activationPageUrlWithToken = `${resetPageUrl}/${accountActivationToken}`;
+  const activationPageUrlWithToken = `${resetPageUrl}/${passwordResetToken}`;
 
-  // const htmlOutput = buildPasswordResetHTML(user.email, passwordResetToken!);
-  // const textOutput = buildPasswordResetText(user.email, passwordResetToken!);
+  await sendEmail(
+    email,
+    PASSWORD_RESET_SUBJECT,
+    buildPasswordResetEmail(websiteName, activationPageUrlWithToken, false),
+    buildPasswordResetEmail(websiteName, activationPageUrlWithToken, true)
+  );
 
-  // await sendEmail(req.body.email, RESET_PASSWORD_SUBJECT, textOutput, htmlOutput);
   res.sendStatus(200);
 }

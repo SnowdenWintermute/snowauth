@@ -11,7 +11,7 @@ export default async function createTestUser(
 ) {
   const userIdRecord = await userIdsRepo.insert();
   if (passwordOption) passwordOption = await argon2.hash(passwordOption, ARGON2_OPTIONS);
-  credentialsRepo.insert(userIdRecord.id, email, passwordOption);
-  profilesRepo.insert(userIdRecord.id, username);
+  await credentialsRepo.insert(userIdRecord.id, email, passwordOption);
+  await profilesRepo.insert(userIdRecord.id, username);
   return userIdRecord;
 }

@@ -1,5 +1,4 @@
 import { createClient, RedisClientType, SetOptions } from "redis";
-import { env } from "../utils/load-env-variables.js";
 
 const CONNECTION_TIMEOUT_MS = 3000;
 
@@ -7,15 +6,15 @@ export class ValkeyManager {
   client: RedisClientType;
   connected: boolean = false;
   constructor(public keyPrefix: string) {
-    console.log("connecting to valkey at", env.VALKEY_URL);
+    // console.log("connecting to valkey at", env.VALKEY_URL);
     this.client = createClient({
       url: process.env.VALKEY_URL,
     });
 
     this.client.on("connect", () => {
-      console.log(
-        `valkey client with ${this.keyPrefix ? `prefix ${this.keyPrefix}` : "no prefix"} connected`
-      );
+      // console.log(
+      //   `valkey client with ${this.keyPrefix ? `prefix ${this.keyPrefix}` : "no prefix"} connected`
+      // );
       this.connected = true;
     });
     this.client.on("disconnect", () => {
