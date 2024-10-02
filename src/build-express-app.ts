@@ -22,6 +22,7 @@ import {
   loginWithGoogleHandler,
   googleOauthResponseHandler,
 } from "./route-handlers/login-with-google.js";
+import appRoute from "./utils/get-app-route-name.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -30,33 +31,33 @@ export default function buildExpressApp() {
 
   const { USERS, SESSIONS, CREDENTIALS } = ROUTES;
 
-  expressApp.get("/", (_req, res) => res.send("You have reached the snowauth server"));
+  expressApp.get(appRoute(), (_req, res) => res.send("You have reached the snowauth server"));
   // USEABLE BY ANYONE
   expressApp.post(
-    USERS.ROOT,
+    appRoute(USERS.ROOT),
     /* registrationIpRateLimiter */ validate(registerUserSchema),
     accountCreationRequestHandler
   );
-  expressApp.put(USERS.ROOT, validate(accountActivationSchema), accountActivationHandler);
-  expressApp.post(SESSIONS, validate(loginSchema), loginWithCredentialsHandler);
+  expressApp.put(appRoute(USERS.ROOT), validate(accountActivationSchema), accountActivationHandler);
+  expressApp.post(appRoute(SESSIONS), validate(loginSchema), loginWithCredentialsHandler);
   expressApp.post(
-    CREDENTIALS.ROOT,
+    appRoute(CREDENTIALS.ROOT),
     validate(passwordResetEmailRequestSchema),
     /* passwordResetEmailRequestIpRateLimiter */ requestPasswordResetEmailHandler
   );
 
-  expressApp.post(CREDENTIALS.ROOT + CREDENTIALS.GOOGLE, loginWithGoogleHandler);
+  expressApp.post(appRoute(CREDENTIALS.ROOT, CREDENTIALS.GOOGLE), loginWithGoogleHandler);
   expressApp.get(CREDENTIALS.GOOGLE, googleOauthResponseHandler);
 
-  expressApp.put(CREDENTIALS.ROOT, validate(changePasswordSchema), changePasswordHandler);
+  expressApp.put(appRoute(CREDENTIALS.ROOT), validate(changePasswordSchema), changePasswordHandler);
 
   // LOGGED IN USERS ONLY ONLY
   expressApp.use(getOrRefreshSession);
 
   // for testing purposes
-  expressApp.get(USERS.ROOT + USERS.PROTECTED, (_req, res, _next) => res.sendStatus(200));
-  expressApp.delete(SESSIONS, logoutHandler);
-  expressApp.delete(USERS.ROOT, validate(deleteAccountSchema), deleteAccountHandler);
+  expressApp.get(appRoute(USERS.ROOT, USERS.PROTECTED), (_req, res, _next) => res.sendStatus(200));
+  expressApp.delete(appRoute(SESSIONS), logoutHandler);
+  expressApp.delete(appRoute(USERS.ROOT), validate(deleteAccountSchema), deleteAccountHandler);
 
   // MODERATOR/ADMIN ONLY
   // router.use(restrictTo(UserRole.MODERATOR, UserRole.ADMIN));

@@ -1,4 +1,7 @@
+import { env } from "./utils/load-env-variables.js";
+
 export const ROUTES = {
+  ROOT: env.NODE_ENV === "production" ? "/auth" : "",
   USERS: {
     ROOT: "/users",
     PROTECTED: "/protected",
