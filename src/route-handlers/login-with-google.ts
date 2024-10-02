@@ -29,10 +29,7 @@ export async function loginWithGoogleHandler(req: Request, res: Response, next: 
     nonce=${nonce}&
   `;
 
-  const codeRequestResponse = await fetch(requestUri, {
-    method: "GET",
-  });
-  res.sendStatus(codeRequestResponse.status);
+  res.redirect(requestUri);
 }
 
 export async function googleOauthResponseHandler(req: Request, res: Response, next: NextFunction) {
