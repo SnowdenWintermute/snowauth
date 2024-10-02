@@ -6,13 +6,9 @@ import setUpTestDatabaseContexts from "../utils/testing/set-up-test-database-con
 import buildExpressApp from "../build-express-app.js";
 import { ROUTES } from "../route-names.js";
 import createSession from "../tokens/create-session.js";
-import {
-  ACCOUNT_CREATION_SESSION_PREFIX,
-  PASSWORD_RESET_SESSION_PREFIX,
-} from "../kv-store/consts.js";
+import { PASSWORD_RESET_SESSION_PREFIX } from "../kv-store/consts.js";
 import { responseBodyIncludesCustomErrorMessage } from "../utils/testing/custom-error-checkers.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
-import { credentialsRepo } from "../database/repos/credentials.js";
 import { env } from "../utils/load-env-variables.js";
 import createTestUser from "../utils/testing/create-test-user.js";
 

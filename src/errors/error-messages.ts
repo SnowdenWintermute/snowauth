@@ -55,7 +55,8 @@ export const ERROR_MESSAGES = {
       PASSWORD: "Please enter a password",
       PASSWORD_CONFIRMATION: "Please confirm your password",
     },
-    CONFIRM_DELETE_ACCOUNT_EMAIL_MATCH: "Email address typed did not match your account's email",
+    DELETE_CONFIRMATION_NOT_CHECKED:
+      "Please make sure the 'delete account' checkbox is checked to confirm deletion",
     INVALID_EMAIL: "Invalid email",
     PASSWORD_MIN_LENGTH: `Password must be at least ${PASSWORD_LENGTH.MIN} characters`,
     PASSWORD_MAX_LENGTH: `Password must be no longer than ${PASSWORD_LENGTH.MAX} characters`,

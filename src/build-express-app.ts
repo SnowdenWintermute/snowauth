@@ -16,6 +16,8 @@ import requestPasswordResetEmailHandler from "./route-handlers/password-reset-em
 import { passwordResetEmailRequestSchema } from "./validation/password-reset-email-request-schema.js";
 import { changePasswordSchema } from "./validation/change-password-schema.js";
 import changePasswordHandler from "./route-handlers/change-password.js";
+import { deleteAccountSchema } from "./validation/delete-account-schema.js";
+import deleteAccountHandler from "./route-handlers/delete-account.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -43,11 +45,10 @@ export default function buildExpressApp() {
   // LOGGED IN USERS ONLY ONLY
   expressApp.use(getOrRefreshSession);
 
-  // for testing
+  // for testing purposes
   expressApp.get(USERS.ROOT + USERS.PROTECTED, (_req, res, _next) => res.sendStatus(200));
   expressApp.delete(SESSIONS, logoutHandler);
-  // - delete user account
-  // router.delete("/users/:user_id", deleteAccountHandler);
+  expressApp.delete(USERS.ROOT, validate(deleteAccountSchema), deleteAccountHandler);
 
   // MODERATOR/ADMIN ONLY
   // router.use(restrictTo(UserRole.MODERATOR, UserRole.ADMIN));
