@@ -5,6 +5,7 @@ export const ROUTES = {
   },
   CREDENTIALS: {
     ROOT: "/credentials",
+    GOOGLE: "/google-auth",
   },
   SESSIONS: "/sessions",
 };

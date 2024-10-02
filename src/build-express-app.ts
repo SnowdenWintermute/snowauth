@@ -18,6 +18,10 @@ import { changePasswordSchema } from "./validation/change-password-schema.js";
 import changePasswordHandler from "./route-handlers/change-password.js";
 import { deleteAccountSchema } from "./validation/delete-account-schema.js";
 import deleteAccountHandler from "./route-handlers/delete-account.js";
+import {
+  loginWithGoogleHandler,
+  googleOauthResponseHandler,
+} from "./route-handlers/login-with-google.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -40,6 +44,10 @@ export default function buildExpressApp() {
     validate(passwordResetEmailRequestSchema),
     /* passwordResetEmailRequestIpRateLimiter */ requestPasswordResetEmailHandler
   );
+
+  expressApp.post(CREDENTIALS.ROOT + CREDENTIALS.GOOGLE, loginWithGoogleHandler);
+  expressApp.get(CREDENTIALS.GOOGLE, googleOauthResponseHandler);
+
   expressApp.put(CREDENTIALS.ROOT, validate(changePasswordSchema), changePasswordHandler);
 
   // LOGGED IN USERS ONLY ONLY

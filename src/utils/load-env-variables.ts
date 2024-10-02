@@ -17,4 +17,6 @@ export const env = cleanEnv(process.env, {
   SESSION_HASH_KEY: str(),
   SENDGRID_API_KEY: str(),
   SENDGRID_EMAIL_ADDRESS: email(),
+  GOOGLE_OAUTH_CLIENT_ID: str(),
+  GOOGLE_OAUTH_CLIENT_SECRET: str(),
 });
