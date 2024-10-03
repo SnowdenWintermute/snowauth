@@ -10,5 +10,9 @@ export const ROUTES = {
     ROOT: "/credentials",
     GOOGLE: "/google-auth",
   },
+  OAUTH: {
+    ROOT: "/oauth",
+    GOOGLE: "/google",
+  },
   SESSIONS: "/sessions",
 };

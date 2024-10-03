@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { env } from "../utils/load-env-variables.js";
 import { ROUTES } from "../route-names.js";
+import appRoute from "../utils/get-app-route-name.js";
 
 export async function loginWithGoogleHandler(req: Request, res: Response, next: NextFunction) {
   // google ouath2 discovery document https://accounts.google.com/.well-known/openid-configuration
@@ -19,23 +20,20 @@ export async function loginWithGoogleHandler(req: Request, res: Response, next: 
   const redirect_uri = getGoogleOauthRedirectURI();
 
   // Send the get request like so
-  const requestUri = `
-  ${googleOauth2BaseUri}?
-    response_type=${response_type}&
-    client_id=${client_id}&
-    scope=${encodeURIComponent(scope)}&
-    redirect_uri=${encodeURIComponent(redirect_uri)}&
-    state=${state}&
-    nonce=${nonce}&
-  `;
+  // we actually need to send this from the client
+  const requestUri = `${googleOauth2BaseUri}?response_type=${response_type}&client_id=${client_id}&scope=${encodeURIComponent(
+    scope
+  )}&redirect_uri=${encodeURIComponent(redirect_uri)}&state=${state}&nonce=${nonce}`;
 
-  res.redirect(requestUri);
+  res.status(201).send({ requestUri });
 }
 
 export async function googleOauthResponseHandler(req: Request, res: Response, next: NextFunction) {
-  // example url
-  // https://oauth2.example.com/code?state=security_token%3D138r5719ru3e1%26url%3Dhttps%3A%2F%2Foa2cb.example.com%2FmyHome&code=4/P7q7W91a-oMsCeLvIaQm6bTrgtp7&scope=openid%20email%20https://www.googleapis.com/auth/userinfo.email
-  // parse the query string
+  // google will POST to this endpoint
+  // parse the query string from google
+  // get a code
+  // make a request to this address with the code
+  // https://oauth2.googleapis.com/token
   const fullUrlString = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   const requestUrlObject = new URL(fullUrlString);
   const requestQueryParams = new URLSearchParams(requestUrlObject.search);
@@ -50,20 +48,29 @@ export async function googleOauthResponseHandler(req: Request, res: Response, ne
   const token_endpoint = "https://oauth2.googleapis.com/token";
   const redirect_uri = getGoogleOauthRedirectURI();
 
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // TODO -wrap fetch requests in a trycatch
+
+  console.log(code, env.GOOGLE_OAUTH_CLIENT_ID, env.GOOGLE_OAUTH_CLIENT_SECRET, redirect_uri);
+
   const response = await fetch(token_endpoint, {
     method: "POST",
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({
       code,
       client_id: env.GOOGLE_OAUTH_CLIENT_ID,
       client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-      redirect_uri: encodeURIComponent(redirect_uri),
+      redirect_uri: redirect_uri,
       grant_type: "authorization_code",
     }),
   });
 
   const body = await response.json();
-  const parsed = JSON.parse(body);
-  console.log("PARSED JSON RESPONSE", parsed);
+  console.log("BODY", body);
+  res.redirect("/");
+  // console.log("PARSED JSON RESPONSE", parsed);
+
+  // make sure the user's email is verified by google
 
   // check that the nonce is the same one supplied and delete it from the db once accepted
   //
@@ -73,10 +80,10 @@ export async function googleOauthResponseHandler(req: Request, res: Response, ne
 }
 
 function getGoogleOauthRedirectURI() {
-  const { CREDENTIALS } = ROUTES;
+  const { OAUTH } = ROUTES;
   const productionGoogleRedirectURI = "https://roguelikeracing.com/auth";
   const devGoogleRedirectURI = "http://localhost:8081";
-  const googleRedirectURIPath = CREDENTIALS.GOOGLE;
+  const googleRedirectURIPath = appRoute(OAUTH.ROOT, OAUTH.GOOGLE);
   const baseRedirectURI =
     env.NODE_ENV === "production" ? productionGoogleRedirectURI : devGoogleRedirectURI;
   return baseRedirectURI + googleRedirectURIPath;

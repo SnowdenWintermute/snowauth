@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import { ROUTES } from "./route-names.js";
 import { validate } from "./validation/validate.js";
@@ -23,13 +24,24 @@ import {
   googleOauthResponseHandler,
 } from "./route-handlers/login-with-google.js";
 import appRoute from "./utils/get-app-route-name.js";
+import { env } from "./utils/load-env-variables.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
   expressApp.use(express.json({ limit: INCOMING_JSON_DATA_LIMIT }));
   expressApp.use(cookieParser());
+  const corsOrigin =
+    env.NODE_ENV === "production" ? "https://roguelikeracing.com" : "http://localhost:3000";
+  console.log(corsOrigin);
+  expressApp.use(
+    cors({
+      origin: corsOrigin,
+      methods: ["GET", "POST"],
+      credentials: true,
+    })
+  );
 
-  const { USERS, SESSIONS, CREDENTIALS } = ROUTES;
+  const { USERS, SESSIONS, CREDENTIALS, OAUTH } = ROUTES;
 
   expressApp.get(appRoute(), (_req, res) => res.send("You have reached the snowauth server"));
   // USEABLE BY ANYONE
@@ -46,8 +58,8 @@ export default function buildExpressApp() {
     /* passwordResetEmailRequestIpRateLimiter */ requestPasswordResetEmailHandler
   );
 
-  expressApp.post(appRoute(CREDENTIALS.ROOT, CREDENTIALS.GOOGLE), loginWithGoogleHandler);
-  expressApp.get(CREDENTIALS.GOOGLE, googleOauthResponseHandler);
+  expressApp.post(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), loginWithGoogleHandler);
+  expressApp.get(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), googleOauthResponseHandler);
 
   expressApp.put(appRoute(CREDENTIALS.ROOT), validate(changePasswordSchema), changePasswordHandler);
 
