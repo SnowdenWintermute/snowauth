@@ -16,7 +16,7 @@ export const OAUTH_STATE_COOKIE_NAME = "state";
 export const SESSION_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
   secure: env.NODE_ENV === "production",
-  sameSite: env.NODE_ENV === "production" ? "strict" : "none",
+  sameSite: env.NODE_ENV === "production" ? "strict" : "lax",
 };
 
 export const REMEMBER_ME_COOKIE_OPTIONS: CookieOptions = {
@@ -28,6 +28,8 @@ export const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
   maxAge: env.OAUTH_STATE_COOKIE_EXPIRATION,
   ...SESSION_COOKIE_OPTIONS,
 };
+
+console.log("OAUTH_STATE_COOKIE_OPTIONS", OAUTH_STATE_COOKIE_OPTIONS);
 
 export const ARGON2_OPTIONS = {
   hashLength: 32,

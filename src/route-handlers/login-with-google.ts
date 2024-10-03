@@ -21,6 +21,7 @@ export async function loginWithGoogleHandler(req: Request, res: Response, next: 
   const scope = "openid email";
   const state = crypto.randomBytes(16).toString("hex");
   res.cookie(OAUTH_STATE_COOKIE_NAME, state, OAUTH_STATE_COOKIE_OPTIONS);
+
   // to prevent replay attacks, a number to be used once
   const nonce = crypto.randomBytes(16).toString("hex");
   await valkeyManager.context.set(OAUTH_NONCE_PREFIX, nonce, {
@@ -87,12 +88,14 @@ export async function googleOauthResponseHandler(req: Request, res: Response, ne
   console.log("BODY", body);
   if (typeof body.id_token !== "string") {
     console.error("NO ID TOKEN");
-    const decoded = jwt.decode(body.id_token);
-    console.log("DECODED TOKEN: ", decoded);
-
-    // if(typeof body.nonce !== stri)
   }
-  res.redirect("http://localhost:3000");
+
+  const decoded = jwt.decode(body.id_token);
+  console.log("DECODED TOKEN: ", decoded);
+
+  // if(typeof body.nonce !== stri)
+
+  res.status(201).json({ redirect: "/" });
   // console.log("PARSED JSON RESPONSE", parsed);
 
   // make sure the user's email is verified by google
