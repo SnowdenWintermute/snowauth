@@ -36,7 +36,7 @@ export default function buildExpressApp() {
   expressApp.use(
     cors({
       origin: corsOrigin,
-      methods: ["GET", "POST"],
+      methods: ["GET", "POST", "PUT", "DELETE"],
       credentials: true,
     })
   );
@@ -59,7 +59,7 @@ export default function buildExpressApp() {
   );
 
   expressApp.post(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), loginWithGoogleHandler);
-  expressApp.get(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), googleOauthResponseHandler);
+  expressApp.put(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), googleOauthResponseHandler);
 
   expressApp.put(appRoute(CREDENTIALS.ROOT), validate(changePasswordSchema), changePasswordHandler);
 

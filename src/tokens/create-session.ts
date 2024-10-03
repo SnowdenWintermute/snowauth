@@ -2,12 +2,12 @@ import crypto from "crypto";
 import { valkeyManager } from "../kv-store/client.js";
 import { hashToken } from "./hashing-utils.js";
 
-export default async function createSession(prefix: string, data: any, expiration: number) {
+export default async function createSession(prefix: string, data: any, expirationMs: number) {
   const { sessionId, hashedSessionId, sessionName } = await generateSessionId(prefix);
   // CONSEQUENCES: there is no way to see all sessions associated with a user without
   // scaning the entire db
   await valkeyManager.context.set(`${prefix}${hashedSessionId}`, data, {
-    EX: expiration,
+    PX: expirationMs,
   });
 
   return { sessionId, hashedSessionId, sessionName };

@@ -11,18 +11,22 @@ export const SESSION_COOKIE_NAME = "id";
 export const REMEMBER_ME_COOKIE_NAME = "rm";
 export const REMEMBER_ME_SERIES_COOKIE_NAME = "series";
 export const REMEMBER_ME_TOKEN_COOKIE_NAME = "rmid";
+export const OAUTH_STATE_COOKIE_NAME = "state";
 
 export const SESSION_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  secure: env.NODE_ENV === "production",
+  sameSite: env.NODE_ENV === "production" ? "strict" : "none",
 };
 
 export const REMEMBER_ME_COOKIE_OPTIONS: CookieOptions = {
   maxAge: env.REMEMBER_ME_TOKEN_EXPIRATION,
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  ...SESSION_COOKIE_OPTIONS,
+};
+
+export const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
+  maxAge: env.OAUTH_STATE_COOKIE_EXPIRATION,
+  ...SESSION_COOKIE_OPTIONS,
 };
 
 export const ARGON2_OPTIONS = {

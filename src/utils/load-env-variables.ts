@@ -13,6 +13,7 @@ export const env = cleanEnv(process.env, {
   PASSWORD_RESET_SESSION_EXPIRATION: num(),
   SESSION_EXPIRATION: num(),
   REMEMBER_ME_TOKEN_EXPIRATION: num(),
+  OAUTH_STATE_COOKIE_EXPIRATION: num(),
   HASHING_PEPPER: str(),
   SESSION_HASH_KEY: str(),
   SENDGRID_API_KEY: str(),
