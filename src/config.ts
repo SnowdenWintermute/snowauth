@@ -12,6 +12,7 @@ export const REMEMBER_ME_COOKIE_NAME = "rm";
 export const REMEMBER_ME_SERIES_COOKIE_NAME = "series";
 export const REMEMBER_ME_TOKEN_COOKIE_NAME = "rmid";
 export const OAUTH_STATE_COOKIE_NAME = "state";
+export const OAUTH_NONCE_COOKIE_NAME = "nonce";
 
 export const SESSION_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
@@ -24,12 +25,10 @@ export const REMEMBER_ME_COOKIE_OPTIONS: CookieOptions = {
   ...SESSION_COOKIE_OPTIONS,
 };
 
-export const OAUTH_STATE_COOKIE_OPTIONS: CookieOptions = {
+export const OAUTH_COOKIE_OPTIONS: CookieOptions = {
   maxAge: env.OAUTH_STATE_COOKIE_EXPIRATION,
   ...SESSION_COOKIE_OPTIONS,
 };
-
-console.log("OAUTH_STATE_COOKIE_OPTIONS", OAUTH_STATE_COOKIE_OPTIONS);
 
 export const ARGON2_OPTIONS = {
   hashLength: 32,

@@ -4,7 +4,11 @@ import jwt from "jsonwebtoken";
 import { env } from "../utils/load-env-variables.js";
 import { ROUTES } from "../route-names.js";
 import appRoute from "../utils/get-app-route-name.js";
-import { OAUTH_STATE_COOKIE_NAME, OAUTH_STATE_COOKIE_OPTIONS } from "../config.js";
+import {
+  OAUTH_COOKIE_OPTIONS,
+  OAUTH_NONCE_COOKIE_NAME,
+  OAUTH_STATE_COOKIE_NAME,
+} from "../config.js";
 import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { clearCookie } from "../utils/clear-cookie.js";
@@ -20,9 +24,9 @@ export async function loginWithGoogleHandler(req: Request, res: Response, next: 
   const response_type = "code";
   const scope = "openid email";
   const state = crypto.randomBytes(16).toString("hex");
-  res.cookie(OAUTH_STATE_COOKIE_NAME, state, OAUTH_STATE_COOKIE_OPTIONS);
+  res.cookie(OAUTH_STATE_COOKIE_NAME, state, OAUTH_COOKIE_OPTIONS);
+  res.cookie(OAUTH_NONCE_COOKIE_NAME, state, OAUTH_COOKIE_OPTIONS);
 
-  // to prevent replay attacks, a number to be used once
   const nonce = crypto.randomBytes(16).toString("hex");
   await valkeyManager.context.set(OAUTH_NONCE_PREFIX, nonce, {
     PX: env.OAUTH_STATE_COOKIE_EXPIRATION,
@@ -56,9 +60,11 @@ export async function googleOauthResponseHandler(req: Request, res: Response, ne
   }
   const { state, code } = req.body;
   const stateCookie = req.cookies[OAUTH_STATE_COOKIE_NAME];
+  const nonceCookie = req.cookies[OAUTH_NONCE_COOKIE_NAME];
   console.log("req.cookies", req.cookies);
   // delete their oauth state cookie
   clearCookie(res, OAUTH_STATE_COOKIE_NAME);
+  clearCookie(res, OAUTH_NONCE_COOKIE_NAME);
   // check if state param equals our saved state param
   if (state !== stateCookie)
     return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.OAUTH_STATE, 401)]);
@@ -90,21 +96,31 @@ export async function googleOauthResponseHandler(req: Request, res: Response, ne
     console.error("NO ID TOKEN");
   }
 
-  const decoded = jwt.decode(body.id_token);
+  // const decoded = jwt.decode(body.id_token, { complete: true });
+  const decoded = jwt.decode(body.id_token, { complete: true });
   console.log("DECODED TOKEN: ", decoded);
-
-  // if(typeof body.nonce !== stri)
-
-  res.status(201).json({ redirect: "/" });
-  // console.log("PARSED JSON RESPONSE", parsed);
-
-  // make sure the user's email is verified by google
-
-  // check that the nonce is the same one supplied and delete it from the db once accepted
+  if (!decoded?.payload)
+    return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.INVALID_OAUTH_ID_TOKEN, 401)]);
+  // check that the nonce exists in the DB and delete it from the db once accepted
+  // check that the nonce cookie matches the id token nonce
   //
+  // make sure the user's email is verified by google
+  // create the user and their credentials if they don't exist
+  // create the user's session
+  res.status(201).json({ alreadyRegistered: true }); // if not already registered, prompt for a username
+  // the user's browser will handle redirecting them on success or showing an error if not
+
   // before using the id token in other services, they must validate it:
   // https://developers.google.com/identity/openid-connect/openid-connect#validatinganidtoken
   // but it is fine to use it here on the server because we know it came from google directly
+  // TO VERIFY
+  // find out which key was used by reading the jwt header from decoded.header
+  // fetch the google public keys from https://www.googleapis.com/oauth2/v3/certs (link is from discovery document)
+  // convert the keys which are in JWK format to PEM format using a library
+  // call jwt.verify with the PEM format key
+  // decoded.iss must equal https://accounts.google.com OR accounts.google.com
+  // decoded.aud must equal our google client id
+  // decoded.exp must not be in the past
 }
 
 function getGoogleOauthRedirectURI() {
@@ -115,4 +131,29 @@ function getGoogleOauthRedirectURI() {
   const baseRedirectURI =
     env.NODE_ENV === "production" ? productionGoogleRedirectURI : devGoogleRedirectURI;
   return baseRedirectURI + googleRedirectURIPath;
+}
+
+// client secret makes it so only our server can exchange authorization codes for id tokens
+//
+// state makes it so only the browser which started the oauth request can successfully present
+// an authorization code
+//
+// an attacker can start an oauth flow and get a legit state linked to their own browser, and then
+// use a stolen authorization code in their request to our server
+//
+// our server will then exchange the authorization code for the victim's token and check if the nonce
+// inside the id_token matches the nonce in the presenting browser's cookie (which it won't)
+//
+//
+interface GoogleIDTokenPayload {
+  iss: string;
+  azp: string;
+  aud: string;
+  sub: string;
+  email: string;
+  email_verified: boolean;
+  at_hash: string;
+  nonce: string;
+  iat: number;
+  exp: number;
 }

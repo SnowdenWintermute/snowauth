@@ -27,6 +27,7 @@ export const ERROR_MESSAGES = {
       "The provided email address did not match with the password reset token",
     MISSING: "Failed to find a credential entry that was expected to exist",
     OAUTH_STATE: "Your request did not include a matching OAuth state",
+    INVALID_OAUTH_ID_TOKEN: "Invalid OAuth token received",
   },
   SESSION: {
     NOT_LOGGED_IN: "You are not logged in",
