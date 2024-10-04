@@ -57,7 +57,7 @@ export class ValkeyManager {
     return this.client.get(this.keyPrefix + key);
   }
   async del(key: string) {
-    await this.client.del(this.keyPrefix + key);
+    return await this.client.del(this.keyPrefix + key);
   }
   async expire(key: string, seconds: number, mode?: "NX" | "XX" | "GT" | "LT") {
     return this.client.expire(this.keyPrefix + key, seconds, mode);

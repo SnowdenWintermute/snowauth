@@ -9,7 +9,7 @@ export type Profile = {
   userId: number;
   createdAt: number | Date;
   updatedAt: number | Date;
-  username: null | string;
+  username: string;
   usernameUpdatedAt: number | Date;
   role: string;
   status: string;
@@ -19,7 +19,7 @@ export type Profile = {
 const tableName = RESOURCE_NAMES.USER_PROFILES;
 
 class ProfileRepo extends DatabaseRepository<Profile> {
-  async insert(userId: number, username: null | string) {
+  async insert(userId: number, username: string) {
     const { rows } = await this.pgPool.query(
       format(
         `INSERT INTO ${tableName} (user_id, username) VALUES (%L, %L) RETURNING *;`,

@@ -26,8 +26,17 @@ export const ERROR_MESSAGES = {
     PASSWORD_RESET_EMAIL_DOES_NOT_MATCH_TOKEN:
       "The provided email address did not match with the password reset token",
     MISSING: "Failed to find a credential entry that was expected to exist",
-    OAUTH_STATE: "Your request did not include a matching OAuth state",
-    INVALID_OAUTH_ID_TOKEN: "Invalid OAuth token received",
+  },
+  OAUTH: {
+    STATE: "Your request did not include a matching OAuth state",
+    INVALID_ID_TOKEN: "Invalid OAuth token received",
+    AUTH_SERVER_ERROR: "There was an error when calling the third party ID provider",
+    MISSING_ID_TOKEN: "The third party ID provider did not return an ID token",
+    MISSING_NONCE: "The third party ID provider did not include a nonce in their ID token",
+    MISMATCHED_OR_USED_NONCE:
+      "The nonce value provided did not match the nonce in the third party ID provider's token, or it has already been used",
+    UNVERIFIED_EMAIL:
+      "The email used to create the account on the third party ID provider is not yet verified",
   },
   SESSION: {
     NOT_LOGGED_IN: "You are not logged in",

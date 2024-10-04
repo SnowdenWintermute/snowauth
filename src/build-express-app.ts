@@ -21,7 +21,7 @@ import { deleteAccountSchema } from "./validation/delete-account-schema.js";
 import deleteAccountHandler from "./route-handlers/delete-account.js";
 import {
   loginWithGoogleHandler,
-  googleOauthResponseHandler,
+  googleOAuthResponseHandler,
 } from "./route-handlers/login-with-google.js";
 import appRoute from "./utils/get-app-route-name.js";
 import { env } from "./utils/load-env-variables.js";
@@ -59,7 +59,7 @@ export default function buildExpressApp() {
   );
 
   expressApp.post(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), loginWithGoogleHandler);
-  expressApp.put(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), googleOauthResponseHandler);
+  expressApp.put(appRoute(OAUTH.ROOT, OAUTH.GOOGLE), googleOAuthResponseHandler);
 
   expressApp.put(appRoute(CREDENTIALS.ROOT), validate(changePasswordSchema), changePasswordHandler);
 

@@ -37,3 +37,20 @@
 //
 // WHEN LOGGING OUT
 // - logging out should invalidate the "remember me" token
+//
+//
+// OAUTH NOTES:
+//
+// client secret makes it so only our server can exchange authorization codes for id tokens
+//
+// state makes it so only the browser which started the oauth request can successfully present
+// an authorization code
+//
+// an attacker can start an oauth flow and get a legit state linked to their own browser, and then
+// use a stolen authorization code in their request to our server
+//
+// our server will then exchange the authorization code for the victim's token and check if the nonce
+// inside the id_token matches the nonce in the presenting browser's cookie (which it won't)
+// we will check for an identical nonce in our database and delete it if it exists. this means
+// that if the nonce is stolen, its usefulness would be short lived since it can't be used
+// once the intended user has used it

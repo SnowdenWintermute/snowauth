@@ -5,12 +5,12 @@ import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { valkeyManager } from "../kv-store/client.js";
 import { ACCOUNT_CREATION_SESSION_PREFIX } from "../kv-store/consts.js";
-import { userIdsRepo } from "../database/repos/user-ids.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
-import { profilesRepo } from "../database/repos/profiles.js";
 import { logUserIn } from "./log-user-in.js";
 import { ARGON2_OPTIONS } from "../config.js";
 import getSession from "../tokens/get-session.js";
+import insertNewUser from "../database/utils/insert-new-user.js";
+import { profilesRepo } from "../database/repos/profiles.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,
@@ -35,9 +35,11 @@ export default async function accountActivationHandler(
     const hashedPassword = await argon2.hash(password, ARGON2_OPTIONS);
 
     if (existingCredentials === undefined) {
-      const newUserIdRecord = await userIdsRepo.insert();
-      await credentialsRepo.insert(newUserIdRecord.id, email, hashedPassword);
-      await profilesRepo.insert(newUserIdRecord.id, username);
+      const existingUsername = await profilesRepo.findOne("username", username);
+      if (existingUsername !== undefined)
+        return next([new SnowAuthError(ERROR_MESSAGES.USER.NAME_IN_USE_OR_UNAVAILABLE, 400)]);
+
+      await insertNewUser(email, hashedPassword, username);
     } else {
       await credentialsRepo.updatePassword(existingCredentials.id, hashedPassword);
       // don't update their username here, if they already have an account from a
