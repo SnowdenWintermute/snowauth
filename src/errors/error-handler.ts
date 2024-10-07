@@ -13,10 +13,8 @@ export default function errorHandler(error: any, _req: Request, res: Response, n
       return errorToReturn;
     });
   } else console.error("non-custom error in handler: ", error);
-  //
-  let jsonToSend;
-  if (errors) jsonToSend = errors;
-  else jsonToSend = [{ message: ERROR_MESSAGES.SERVER_GENERIC, error }];
 
-  res.status(status || error.status || 500).json(jsonToSend);
+  console.log(errors);
+  const responseBody = { errors: errors || [{ message: ERROR_MESSAGES.SERVER_GENERIC }] };
+  res.status(status || error.status || 500).json(responseBody);
 }

@@ -8,6 +8,7 @@ import { credentialsRepo } from "../database/repos/credentials.js";
 import { ARGON2_OPTIONS } from "../config.js";
 import getSession from "../tokens/get-session.js";
 import { ChangePasswordUserInput } from "../validation/change-password-schema.js";
+import catchUnhandledErrors from "../errors/catch-unhandled-errors.js";
 
 export default async function changePasswordHandler(
   req: Request<object, object, ChangePasswordUserInput>,
@@ -47,20 +48,7 @@ export default async function changePasswordHandler(
     }
 
     res.sendStatus(201);
-  } catch (error: any) {
-    const errors = [];
-    if (error.schema && error.detail) {
-      // probably a postgres error
-      console.error("pg error: ", error.code, JSON.stringify(error, null, 2));
-      if (error.column)
-        errors.push(new SnowAuthError(`Database error - problem relating to ${error.column}`, 400));
-      else if (error.detail)
-        errors.push(new SnowAuthError(`Database error - detail: ${error.detail}`, 400));
-    } else if (error instanceof SnowAuthError) {
-      errors.push(error);
-    } else if (error.message && error.status) {
-      errors.push(new SnowAuthError(error.message, error.code));
-    }
-    return next(errors);
+  } catch (error) {
+    return catchUnhandledErrors(error, next);
   }
 }

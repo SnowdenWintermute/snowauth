@@ -12,40 +12,45 @@ import {
 } from "../emails/email-templates.js";
 import createSession from "../tokens/create-session.js";
 import { env } from "../utils/load-env-variables.js";
+import catchUnhandledErrors from "../errors/catch-unhandled-errors.js";
 
 export default async function accountCreationRequestHandler(
   req: Request<object, object, UserRegistrationUserInput>,
   res: Response,
   next: NextFunction
 ) {
-  const { email, websiteName, activationPageUrl } = req.body;
-  const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
+  try {
+    const { email, websiteName, activationPageUrl } = req.body;
+    const existingCredentials = await credentialsRepo.findOne("emailAddress", email);
 
-  if (existingCredentials && existingCredentials.password !== null) {
-    return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.EMAIL_IN_USE_OR_UNAVAILABLE, 403)]);
+    if (existingCredentials && existingCredentials.password !== null) {
+      return next([new SnowAuthError(ERROR_MESSAGES.CREDENTIALS.EMAIL_IN_USE_OR_UNAVAILABLE, 403)]);
+    }
+
+    let existingUsernameOption = null;
+    if (existingCredentials) {
+      const profileOption = await profilesRepo.findOne("userId", existingCredentials.userId);
+      existingUsernameOption = profileOption?.username || null;
+    }
+
+    const { sessionId: accountActivationToken } = await createSession(
+      ACCOUNT_CREATION_SESSION_PREFIX,
+      email,
+      env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
+    );
+
+    const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}/${email}/${existingUsernameOption}`;
+
+    // send them an email
+    sendEmail(
+      email,
+      ACCOUNT_ACTIVATION_SUBJECT,
+      buildAccountActivationEmail(websiteName, activationPageUrlWithToken, false),
+      buildAccountActivationEmail(websiteName, activationPageUrlWithToken, true)
+    );
+
+    res.sendStatus(201);
+  } catch (error) {
+    return catchUnhandledErrors(error, next);
   }
-
-  let existingUsernameOption = null;
-  if (existingCredentials) {
-    const profileOption = await profilesRepo.findOne("userId", existingCredentials.userId);
-    existingUsernameOption = profileOption?.username || null;
-  }
-
-  const { sessionId: accountActivationToken } = await createSession(
-    ACCOUNT_CREATION_SESSION_PREFIX,
-    email,
-    env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
-  );
-
-  const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}/${email}/${existingUsernameOption}`;
-
-  // send them an email
-  sendEmail(
-    email,
-    ACCOUNT_ACTIVATION_SUBJECT,
-    buildAccountActivationEmail(websiteName, activationPageUrlWithToken, false),
-    buildAccountActivationEmail(websiteName, activationPageUrlWithToken, true)
-  );
-
-  res.sendStatus(201);
 }

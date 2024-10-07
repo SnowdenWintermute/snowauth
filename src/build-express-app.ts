@@ -40,6 +40,7 @@ export default function buildExpressApp() {
       credentials: true,
     })
   );
+  // expressApp.options("*", cors()); // Allow all OPTIONS requests
 
   const { USERS, SESSIONS, CREDENTIALS, OAUTH } = ROUTES;
 
