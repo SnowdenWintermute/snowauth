@@ -19,75 +19,80 @@ import getSession from "../tokens/get-session.js";
 import { AUTH_SESSION_PREFIX } from "../kv-store/consts.js";
 import handleSuspiciousActivity from "../utils/handle-suspicious-activity.js";
 import { clearCookie } from "../utils/clear-cookie.js";
+import catchUnhandledErrors from "../errors/catch-unhandled-errors.js";
 
 export default async function getOrRefreshSession(req: Request, res: Response, next: NextFunction) {
-  const { SESSION, USER } = ERROR_MESSAGES;
-  const sessionId = req.cookies[SESSION_COOKIE_NAME];
-  const rememberMeCookie = req.cookies[REMEMBER_ME_COOKIE_NAME];
+  try {
+    const { SESSION, USER } = ERROR_MESSAGES;
+    const sessionId = req.cookies[SESSION_COOKIE_NAME];
+    const rememberMeCookie = req.cookies[REMEMBER_ME_COOKIE_NAME];
 
-  // intentionally checking for "truthyness" of sessionId to account for empty string
-  // as well as undefined
-  if (sessionId && !isValidSnowAuthRandomHex(sessionId)) {
-    handleSuspiciousActivity("SUSPICIOUS ACTIVITY - Malformed session id provided");
-    return next([new SnowAuthError(SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
-  }
-
-  const { session } = await getSession(AUTH_SESSION_PREFIX, sessionId || "");
-
-  if (session !== null) {
-    res.locals.userId = parseInt(session);
-    return next();
-  }
-
-  if (rememberMeCookie === undefined) {
-    clearCookie(res, SESSION_COOKIE_NAME);
-    return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
-  }
-
-  const validRememberMeCookie = validateRememberMeCookie(rememberMeCookie);
-  if (validRememberMeCookie === null) {
-    handleSuspiciousActivity("SUSPICIOUS ACTIVITY - Malformed remember me cookie provided");
-    return next([new SnowAuthError(SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
-  }
-  const { seriesId, rememberMeToken } = validRememberMeCookie;
-
-  const sessionSeries = await sessionSeriesRepo.findById(seriesId);
-  if (sessionSeries === undefined) return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
-
-  if (sessionSeries.hashedToken !== hashToken(rememberMeToken)) {
-    handleSuspiciousActivity("SUSPICIOUS ACTIVITY - series session id and token mismatch");
-    const profile = await profilesRepo.findOne("userId", sessionSeries.userId);
-    if (profile) {
-      profile.status = USER_STATUS.LOCKED_OUT;
-      await profilesRepo.update(profile);
+    // intentionally checking for "truthyness" of sessionId to account for empty string
+    // as well as undefined
+    if (sessionId && !isValidSnowAuthRandomHex(sessionId)) {
+      handleSuspiciousActivity("SUSPICIOUS ACTIVITY - Malformed session id provided");
+      return next([new SnowAuthError(SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
     }
-    return next([new SnowAuthError(USER.ACCOUNT_LOCKED, 401)]);
+
+    const { session } = await getSession(AUTH_SESSION_PREFIX, sessionId || "");
+
+    if (session !== null) {
+      res.locals.userId = parseInt(session);
+      return next();
+    }
+
+    if (rememberMeCookie === undefined) {
+      clearCookie(res, SESSION_COOKIE_NAME);
+      return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
+    }
+
+    const validRememberMeCookie = validateRememberMeCookie(rememberMeCookie);
+    if (validRememberMeCookie === null) {
+      handleSuspiciousActivity("SUSPICIOUS ACTIVITY - Malformed remember me cookie provided");
+      return next([new SnowAuthError(SESSION.INVALID_OR_EXPIRED_TOKEN, 401)]);
+    }
+    const { seriesId, rememberMeToken } = validRememberMeCookie;
+
+    const sessionSeries = await sessionSeriesRepo.findById(seriesId);
+    if (sessionSeries === undefined) return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
+
+    if (sessionSeries.hashedToken !== hashToken(rememberMeToken)) {
+      handleSuspiciousActivity("SUSPICIOUS ACTIVITY - series session id and token mismatch");
+      const profile = await profilesRepo.findOne("userId", sessionSeries.userId);
+      if (profile) {
+        profile.status = USER_STATUS.LOCKED_OUT;
+        await profilesRepo.update(profile);
+      }
+      return next([new SnowAuthError(USER.ACCOUNT_LOCKED, 401)]);
+    }
+
+    const sessionSeriesAge = Date.now() - +sessionSeries.createdAt;
+
+    const sessionSeriesIsExpired = sessionSeriesAge >= env.REMEMBER_ME_TOKEN_EXPIRATION;
+
+    if (sessionSeriesIsExpired) {
+      sessionSeriesRepo.delete(sessionSeries.id);
+      return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
+    }
+
+    const userIdRecord = await userIdsRepo.findOne("id", sessionSeries.userId);
+    if (userIdRecord === undefined) {
+      handleSuspiciousActivity(
+        "A remember me token was used which was associated with a user that no longer exists"
+      );
+      return next([new SnowAuthError(USER.DOES_NOT_EXIST, 404)]);
+    }
+
+    await logUserIn(res, sessionSeries.userId, {
+      shouldRemember: true,
+      existingSessionSeriesId: sessionSeries.id,
+    });
+
+    res.locals.userId = sessionSeries.userId;
+    next();
+  } catch (error) {
+    return catchUnhandledErrors(error, next);
   }
-
-  const sessionSeriesAge = Date.now() - +sessionSeries.createdAt;
-
-  const sessionSeriesIsExpired = sessionSeriesAge >= env.REMEMBER_ME_TOKEN_EXPIRATION;
-
-  if (sessionSeriesIsExpired) {
-    sessionSeriesRepo.delete(sessionSeries.id);
-    return next([new SnowAuthError(SESSION.NOT_LOGGED_IN, 401)]);
-  }
-
-  const userIdRecord = await userIdsRepo.findOne("id", sessionSeries.userId);
-  if (userIdRecord === undefined) {
-    handleSuspiciousActivity(
-      "A remember me token was used which was associated with a user that no longer exists"
-    );
-    return next([new SnowAuthError(USER.DOES_NOT_EXIST, 404)]);
-  }
-
-  await logUserIn(res, sessionSeries.userId, {
-    shouldRemember: true,
-    existingSessionSeriesId: sessionSeries.id,
-  });
-
-  res.locals.userId = sessionSeries.userId;
-  next();
 }
 
 export function validateRememberMeCookie(cookie: string) {
