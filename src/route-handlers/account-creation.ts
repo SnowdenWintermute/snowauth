@@ -39,14 +39,16 @@ export default async function accountCreationRequestHandler(
       env.ACCOUNT_ACTIVATION_SESSION_EXPIRATION
     );
 
-    const activationPageUrlWithToken = `${activationPageUrl}/${accountActivationToken}/${email}/${existingUsernameOption}`;
+    const activationPageUriWithToken = `${activationPageUrl}?token=${accountActivationToken}&email=${encodeURIComponent(
+      email
+    )}&existing_username_option=${encodeURIComponent(existingUsernameOption || "")}`;
 
     // send them an email
     sendEmail(
       email,
       ACCOUNT_ACTIVATION_SUBJECT,
-      buildAccountActivationEmail(websiteName, activationPageUrlWithToken, false),
-      buildAccountActivationEmail(websiteName, activationPageUrlWithToken, true)
+      buildAccountActivationEmail(websiteName, activationPageUriWithToken, false),
+      buildAccountActivationEmail(websiteName, activationPageUriWithToken, true)
     );
 
     res.sendStatus(201);

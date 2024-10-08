@@ -15,5 +15,5 @@ valkeyManager.context.connect();
 const expressApp = buildExpressApp();
 
 expressApp.listen(PORT, () => {
-  console.log(`listening on port ${PORT}`);
+  console.log(`snowauth server listening on port ${PORT}`);
 });

@@ -10,12 +10,11 @@ export function buildAccountActivationEmail(
   isHtml: boolean
 ) {
   const text = `Account creation was initiated for user this email at ${websiteName}. Follow the link to activate your account.`;
-  const link = `${protocol}://${activationPageUrl}`;
   const htmlOutput = `
   <p>${text}</p>
   <p>
-      <a href="" data-cy="activation-link">
-          ${link}
+      <a href=${activationPageUrl} data-cy="activation-link">
+          ${activationPageUrl}
       </a>
   </p>
   `;
@@ -23,7 +22,7 @@ export function buildAccountActivationEmail(
   const textOutput = `
   ${text}
   \n \n
-  ${link}
+  ${activationPageUrl}
   `;
 
   return isHtml ? htmlOutput : textOutput;
@@ -31,13 +30,12 @@ export function buildAccountActivationEmail(
 
 export function buildPasswordResetEmail(websiteName: string, linkUrl: string, isHtml: boolean) {
   const text = `Someone (hopefully you) has requested a password reset for your account at ${websiteName}. Follow the link to reset your password.`;
-  const link = `${protocol}://${linkUrl}`;
 
   const htmlOutput = `
   <p>${text}</p>
   <p>
-      <a href="" data-cy="activation-link">
-          ${link}
+      <a href=${linkUrl} data-cy="activation-link">
+          ${linkUrl}
       </a>
   </p>
   `;
@@ -45,7 +43,7 @@ export function buildPasswordResetEmail(websiteName: string, linkUrl: string, is
   const textOutput = `
   ${text}
   \n \n
-  ${link}
+  ${linkUrl}
   `;
 
   return isHtml ? htmlOutput : textOutput;

@@ -68,7 +68,7 @@ export default async function loginWithCredentialsHandler(
       existingSessionSeriesId: null,
     });
 
-    res.sendStatus(201);
+    res.status(201).json({ username: profile.username });
   } catch (err) {
     return catchUnhandledErrors(err, next);
   }

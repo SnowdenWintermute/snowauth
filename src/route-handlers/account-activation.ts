@@ -11,6 +11,7 @@ import { ARGON2_OPTIONS } from "../config.js";
 import getSession from "../tokens/get-session.js";
 import insertNewUser from "../database/utils/insert-new-user.js";
 import { profilesRepo } from "../database/repos/profiles.js";
+import catchUnhandledErrors from "../errors/catch-unhandled-errors.js";
 
 export default async function accountActivationHandler(
   req: Request<object, object, AccountActivationUserInput>,
@@ -61,19 +62,6 @@ export default async function accountActivationHandler(
     // send this so the client can display the user info
     res.status(201).json({ email, username });
   } catch (error: any) {
-    const errors = [];
-    if (error.schema && error.detail) {
-      // probably a postgres error
-      console.error("pg error: ", error.code, JSON.stringify(error, null, 2));
-      if (error.column)
-        errors.push(new SnowAuthError(`Database error - problem relating to ${error.column}`, 400));
-      else if (error.detail)
-        errors.push(new SnowAuthError(`Database error - detail: ${error.detail}`, 400));
-    } else if (error instanceof SnowAuthError) {
-      errors.push(error);
-    } else if (error.message && error.status) {
-      errors.push(new SnowAuthError(error.message, error.code));
-    }
-    return next(errors);
+    return catchUnhandledErrors(error, next);
   }
 }
