@@ -25,6 +25,7 @@ import {
 } from "./route-handlers/login-with-google.js";
 import appRoute from "./utils/get-app-route-name.js";
 import { env } from "./utils/load-env-variables.js";
+import getUserSessionHandler from "./route-handlers/get-user-session.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -32,7 +33,6 @@ export default function buildExpressApp() {
   expressApp.use(cookieParser());
   const corsOrigin =
     env.NODE_ENV === "production" ? "https://roguelikeracing.com" : "http://localhost:3000";
-  console.log(corsOrigin);
   expressApp.use(
     cors({
       origin: corsOrigin,
@@ -69,6 +69,9 @@ export default function buildExpressApp() {
 
   // for testing purposes
   expressApp.get(appRoute(USERS.ROOT, USERS.PROTECTED), (_req, res, _next) => res.sendStatus(200));
+
+  expressApp.get(appRoute(SESSIONS), getUserSessionHandler);
+
   expressApp.delete(appRoute(SESSIONS), logoutHandler);
   expressApp.delete(appRoute(USERS.ROOT), validate(deleteAccountSchema), deleteAccountHandler);
 
