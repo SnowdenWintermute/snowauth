@@ -4,7 +4,6 @@ import SnowAuthError from "../errors/custom-error.js";
 
 export const validate =
   (schema: AnyZodObject) => (req: Request, _res: Response, next: NextFunction) => {
-    console.log(req.body);
     try {
       schema.parse({
         params: req.params,

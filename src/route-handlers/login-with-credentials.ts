@@ -38,7 +38,12 @@ export default async function loginWithCredentialsHandler(
     if (!isValid) {
       const failedLoginAttemptsKey = `${FAILED_LOGIN_ATTEMPTS_PREFIX}${credentials.userId}`;
       const failedAttempts = await valkeyManager.context.incrBy(failedLoginAttemptsKey, 1);
-      await valkeyManager.context.expire(failedLoginAttemptsKey, FAILED_LOGIN_COUNTER_EXPIRATION);
+
+      await valkeyManager.context.expire(
+        failedLoginAttemptsKey,
+        FAILED_LOGIN_COUNTER_EXPIRATION / 1000 // time is in seconds and our consts are in ms
+      );
+
       if (failedAttempts < FAILED_LOGIN_COUNTER_TOLERANCE) {
         const remainingAttempts = FAILED_LOGIN_COUNTER_TOLERANCE - failedAttempts;
         const error = new SnowAuthError(

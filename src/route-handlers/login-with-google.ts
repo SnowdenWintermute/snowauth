@@ -110,11 +110,8 @@ export async function googleOAuthResponseHandler(req: Request, res: Response, ne
       return next([new SnowAuthError(OAUTH.INVALID_ID_TOKEN, 401)]);
     }
     const payload = validatedPayload.data;
-    console.log("BODY: ", body);
-    console.log("PAYLOAD: ", payload);
 
     const nonceExists = await valkeyManager.context.del(`${OAUTH_NONCE_PREFIX}${payload.nonce}`);
-    console.log("nonceExists", nonceExists);
     // it should equal 1 if it exists because redis DEL returns the number of keys removed
     if (nonceExists !== 1 || nonceCookie !== payload.nonce)
       return next([new SnowAuthError(OAUTH.MISMATCHED_OR_USED_NONCE, 403)]);

@@ -4,6 +4,7 @@ export const ROUTES = {
   ROOT: env.NODE_ENV === "production" ? "/auth" : "",
   USERS: {
     ROOT: "/users",
+    USERNAMES: "/usernames",
     PROTECTED: "/protected",
   },
   CREDENTIALS: {

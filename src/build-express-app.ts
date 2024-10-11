@@ -26,6 +26,8 @@ import {
 import appRoute from "./utils/get-app-route-name.js";
 import { env } from "./utils/load-env-variables.js";
 import getUserSessionHandler from "./route-handlers/get-user-session.js";
+import { changeUsernameSchema } from "./validation/change-username-schema.js";
+import changeUsernameHandler from "./route-handlers/change-username.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -74,6 +76,12 @@ export default function buildExpressApp() {
 
   expressApp.delete(appRoute(SESSIONS), logoutHandler);
   expressApp.delete(appRoute(USERS.ROOT), validate(deleteAccountSchema), deleteAccountHandler);
+
+  expressApp.put(
+    appRoute(USERS.ROOT, USERS.USERNAMES),
+    validate(changeUsernameSchema),
+    changeUsernameHandler
+  );
 
   // MODERATOR/ADMIN ONLY
   // router.use(restrictTo(UserRole.MODERATOR, UserRole.ADMIN));

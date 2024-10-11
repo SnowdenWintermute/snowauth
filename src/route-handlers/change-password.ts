@@ -3,12 +3,14 @@ import * as argon2 from "argon2";
 import SnowAuthError from "../errors/custom-error.js";
 import { ERROR_MESSAGES } from "../errors/error-messages.js";
 import { valkeyManager } from "../kv-store/client.js";
-import { PASSWORD_RESET_SESSION_PREFIX } from "../kv-store/consts.js";
+import { FAILED_LOGIN_ATTEMPTS_PREFIX, PASSWORD_RESET_SESSION_PREFIX } from "../kv-store/consts.js";
 import { credentialsRepo } from "../database/repos/credentials.js";
 import { ARGON2_OPTIONS } from "../config.js";
 import getSession from "../tokens/get-session.js";
 import { ChangePasswordUserInput } from "../validation/change-password-schema.js";
 import catchUnhandledErrors from "../errors/catch-unhandled-errors.js";
+import { profilesRepo } from "../database/repos/profiles.js";
+import { USER_STATUS } from "../database/db-consts.js";
 
 export default async function changePasswordHandler(
   req: Request<object, object, ChangePasswordUserInput>,
@@ -40,6 +42,14 @@ export default async function changePasswordHandler(
     await credentialsRepo.updatePassword(existingCredentials.userId, hashedPassword);
 
     valkeyManager.context.del(sessionName);
+
+    const failedLoginAttemptsKey = `${FAILED_LOGIN_ATTEMPTS_PREFIX}${existingCredentials.userId}`;
+    await valkeyManager.context.del(failedLoginAttemptsKey);
+    const profile = await profilesRepo.findOne("userId", existingCredentials.userId);
+    if (profile === undefined)
+      return next([new SnowAuthError(ERROR_MESSAGES.USER.MISSING_PROFLIE, 500)]);
+    profile.status = USER_STATUS.ACTIVE;
+    await profilesRepo.update(profile);
 
     const credentials = await credentialsRepo.findOne("emailAddress", email);
     if (!credentials) {

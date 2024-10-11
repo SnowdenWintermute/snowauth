@@ -38,13 +38,13 @@ export default async function requestPasswordResetEmailHandler(
       env.PASSWORD_RESET_SESSION_EXPIRATION
     );
 
-    const activationPageUrlWithToken = `${resetPageUrl}/${passwordResetToken}`;
+    const urlWithToken = `${resetPageUrl}?token=${passwordResetToken}`;
 
     await sendEmail(
       email,
       PASSWORD_RESET_SUBJECT,
-      buildPasswordResetEmail(websiteName, activationPageUrlWithToken, false),
-      buildPasswordResetEmail(websiteName, activationPageUrlWithToken, true)
+      buildPasswordResetEmail(websiteName, urlWithToken, false),
+      buildPasswordResetEmail(websiteName, urlWithToken, true)
     );
 
     res.sendStatus(200);

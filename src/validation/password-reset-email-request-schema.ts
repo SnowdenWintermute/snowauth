@@ -9,6 +9,8 @@ export const passwordResetEmailRequestSchema = object({
     email: string({ required_error: ERROR_MESSAGES.VALIDATION.REQUIRED_FIELD.EMAIL }).email(
       ERROR_MESSAGES.VALIDATION.INVALID_EMAIL
     ),
+    // we need the website name and page url because the snowauth server may be used for various
+    // game servers, and we need to send the correct name and link in the email
     websiteName: string(),
     resetPageUrl: string().url(),
   }),
