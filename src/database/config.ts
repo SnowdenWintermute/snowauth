@@ -1,12 +1,11 @@
-import * as dotenv from "dotenv";
-dotenv.config();
+import { env } from "../utils/load-env-variables.js";
 
 export const pgOptions = {
-  host: process.env.POSTGRES_HOST,
+  host: env.POSTGRES_HOST,
   port: 5432,
-  database: process.env.POSTGRES_DB,
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
+  database: env.POSTGRES_DB,
+  user: env.POSTGRES_USER,
+  password: env.POSTGRES_PASSWORD,
 };
 
 export const TEST_DB_NAME = "test-db";

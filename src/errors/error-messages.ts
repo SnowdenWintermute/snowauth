@@ -73,6 +73,6 @@ export const ERROR_MESSAGES = {
     PASSWORD_MAX_LENGTH: `Password must be no longer than ${PASSWORD_LENGTH.MAX} characters`,
     PASSWORDS_DONT_MATCH: "Password confirmation does not match the password",
     USERNAME_MIN_LENGTH: `Name must be at least ${USERNAME_LENGTH.MIN} characters`,
-    USERNAME_MAX_LENGTH: `Name must be no longer than ${USERNAME_LENGTH.MIN} characters`,
+    USERNAME_MAX_LENGTH: `Name must be no longer than ${USERNAME_LENGTH.MAX} characters`,
   },
 };
