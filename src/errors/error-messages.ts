@@ -3,6 +3,7 @@ import { PASSWORD_LENGTH, USERNAME_LENGTH } from "../validation/config.js";
 export const ERROR_MESSAGES = {
   MISSING_ENV_DATA: (dataName: string) => `Missing environment data: ${dataName}`,
   SERVER_GENERIC: "Internal server error",
+  INCORRECT_OR_MISSING_KEY: "Internal service failed to provide the correct secret",
   RATE_LIMITER: {
     REQUESTING_TOO_QUICKLY:
       "You are sending requests too quickly, please wait a while before trying again",

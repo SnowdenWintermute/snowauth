@@ -15,5 +15,6 @@ export const ROUTES = {
     ROOT: "/oauth",
     GOOGLE: "/google",
   },
+  INTERNAL: "/internal",
   SESSIONS: "/sessions",
 };

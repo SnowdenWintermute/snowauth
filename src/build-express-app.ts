@@ -28,6 +28,8 @@ import { env } from "./utils/load-env-variables.js";
 import getUserSessionHandler from "./route-handlers/get-user-session.js";
 import { changeUsernameSchema } from "./validation/change-username-schema.js";
 import changeUsernameHandler from "./route-handlers/change-username.js";
+import getUserSessionWithIdHandler from "./route-handlers/get-user-id.js";
+import internalServicesOnlyGate from "./auth-middleware/internal-services-only.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -44,7 +46,7 @@ export default function buildExpressApp() {
   );
   // expressApp.options("*", cors()); // Allow all OPTIONS requests
 
-  const { USERS, SESSIONS, CREDENTIALS, OAUTH } = ROUTES;
+  const { USERS, SESSIONS, CREDENTIALS, OAUTH, INTERNAL } = ROUTES;
 
   expressApp.get(appRoute(), (_req, res) => res.send("You have reached the snowauth server"));
   // USEABLE BY ANYONE
@@ -81,6 +83,13 @@ export default function buildExpressApp() {
     appRoute(USERS.ROOT, USERS.USERNAMES),
     validate(changeUsernameSchema),
     changeUsernameHandler
+  );
+
+  // INTERNAL SERVICES ONLY
+  expressApp.get(
+    appRoute(INTERNAL, SESSIONS),
+    internalServicesOnlyGate,
+    getUserSessionWithIdHandler
   );
 
   // MODERATOR/ADMIN ONLY
