@@ -5,6 +5,7 @@ export const ROUTES = {
   USERS: {
     ROOT: "/users",
     USERNAMES: "/usernames",
+    IDS: "/user_ids",
     PROTECTED: "/protected",
   },
   CREDENTIALS: {

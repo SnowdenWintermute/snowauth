@@ -9,7 +9,6 @@ export default async function internalServicesOnlyGate(
   next: NextFunction
 ) {
   const internalServicesSecretKey = req.cookies["internal"];
-  console.log("got req.co", req.cookies);
   if (internalServicesSecretKey !== env.INTERNAL_SERVICES_SECRET)
     return next([new SnowAuthError(ERROR_MESSAGES.INCORRECT_OR_MISSING_KEY, 401)]);
   next();

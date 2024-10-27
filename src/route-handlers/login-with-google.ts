@@ -19,7 +19,6 @@ import { credentialsRepo } from "../database/repos/credentials.js";
 import insertNewUser from "../database/utils/insert-new-user.js";
 import { profilesRepo } from "../database/repos/profiles.js";
 import { generateRandomUsername } from "../utils/random-names.js";
-import createSession from "../tokens/create-session.js";
 import { logUserIn } from "./log-user-in.js";
 import catchUnhandledErrors from "../errors/catch-unhandled-errors.js";
 

@@ -30,6 +30,8 @@ import { changeUsernameSchema } from "./validation/change-username-schema.js";
 import changeUsernameHandler from "./route-handlers/change-username.js";
 import getUserSessionWithIdHandler from "./route-handlers/get-user-id.js";
 import internalServicesOnlyGate from "./auth-middleware/internal-services-only.js";
+import getUsernamesByIdsHandler from "./route-handlers/get-usernames-by-id.js";
+import getUserIdsFromUsernamesHandler from "./route-handlers/get-user-ids-from-usernames.js";
 
 export default function buildExpressApp() {
   const expressApp = express();
@@ -68,6 +70,18 @@ export default function buildExpressApp() {
 
   expressApp.put(appRoute(CREDENTIALS.ROOT), validate(changePasswordSchema), changePasswordHandler);
 
+  expressApp.get(
+    appRoute(INTERNAL, USERS.USERNAMES),
+    internalServicesOnlyGate,
+    getUsernamesByIdsHandler
+  );
+
+  expressApp.get(
+    appRoute(INTERNAL, USERS.IDS),
+    internalServicesOnlyGate,
+    getUserIdsFromUsernamesHandler
+  );
+
   // LOGGED IN USERS ONLY ONLY
   expressApp.use(getOrRefreshSession);
 
@@ -79,17 +93,16 @@ export default function buildExpressApp() {
   expressApp.delete(appRoute(SESSIONS), logoutHandler);
   expressApp.delete(appRoute(USERS.ROOT), validate(deleteAccountSchema), deleteAccountHandler);
 
-  expressApp.put(
-    appRoute(USERS.ROOT, USERS.USERNAMES),
-    validate(changeUsernameSchema),
-    changeUsernameHandler
-  );
-
-  // INTERNAL SERVICES ONLY
   expressApp.get(
     appRoute(INTERNAL, SESSIONS),
     internalServicesOnlyGate,
     getUserSessionWithIdHandler
+  );
+
+  expressApp.put(
+    appRoute(USERS.ROOT, USERS.USERNAMES),
+    validate(changeUsernameSchema),
+    changeUsernameHandler
   );
 
   // MODERATOR/ADMIN ONLY
