@@ -24,8 +24,8 @@ export default async function getUserIdsFromUsernamesHandler(
         new Promise(async (resolve, reject) => {
           const profile = await profilesRepo.findOne("username", username);
           if (!profile) {
-            console.error(ERROR_MESSAGES.USER.MISSING_PROFLIE);
-            reject();
+            console.error(ERROR_MESSAGES.USER.MISSING_PROFILE);
+            throw new Error(ERROR_MESSAGES.USER.MISSING_PROFILE);
           } else {
             idsByUsername[username] = profile.userId;
             resolve();

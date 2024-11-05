@@ -31,7 +31,7 @@ export default async function loginWithCredentialsHandler(
 
     const profile = await profilesRepo.findOne("userId", credentials.userId);
     if (!profile) {
-      console.error(ERROR_MESSAGES.USER.MISSING_PROFLIE);
+      console.error(ERROR_MESSAGES.USER.MISSING_PROFILE);
       return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
     }
 

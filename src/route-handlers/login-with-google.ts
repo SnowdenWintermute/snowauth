@@ -126,7 +126,7 @@ export async function googleOAuthResponseHandler(req: Request, res: Response, ne
     if (alreadyRegistered) {
       const existingProfile = await profilesRepo.findOne("userId", existingCredentials.userId);
       if (!existingProfile) {
-        console.error(ERROR_MESSAGES.USER.MISSING_PROFLIE);
+        console.error(ERROR_MESSAGES.USER.MISSING_PROFILE);
         return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
       }
       username = existingProfile.username;

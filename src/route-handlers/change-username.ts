@@ -17,7 +17,7 @@ export default async function changeUsernameHandler(
     const profile = await profilesRepo.findOne("userId", userId);
 
     if (profile === undefined) {
-      console.log(ERROR_MESSAGES.USER.MISSING_PROFLIE);
+      console.log(ERROR_MESSAGES.USER.MISSING_PROFILE);
       return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
     }
 

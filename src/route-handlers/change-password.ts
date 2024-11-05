@@ -47,7 +47,7 @@ export default async function changePasswordHandler(
     await valkeyManager.context.del(failedLoginAttemptsKey);
     const profile = await profilesRepo.findOne("userId", existingCredentials.userId);
     if (profile === undefined)
-      return next([new SnowAuthError(ERROR_MESSAGES.USER.MISSING_PROFLIE, 500)]);
+      return next([new SnowAuthError(ERROR_MESSAGES.USER.MISSING_PROFILE, 500)]);
     profile.status = USER_STATUS.ACTIVE;
     await profilesRepo.update(profile);
 
