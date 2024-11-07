@@ -13,8 +13,17 @@ export class DatabaseRepository<T> {
     public tableName: string
   ) {}
 
-  async findOne(field: keyof T, value: any): Promise<undefined | T> {
+  async findOne(field: keyof T, value: any, caseInsensitive?: boolean): Promise<undefined | T> {
     const snakeCaseField = camelToSnakeCase(field.toString());
+    if (caseInsensitive) {
+      const result = await this.pgPool.query(
+        format(`SELECT * FROM ${this.tableName} WHERE %I ILIKE %L;`, snakeCaseField, value)
+      );
+      const { rows } = result;
+      if (rows[0]) return toCamelCase(rows)[0] as unknown as T;
+      return undefined;
+    }
+
     const result = await this.pgPool.query(
       format(`SELECT * FROM ${this.tableName} WHERE %I = %L;`, snakeCaseField, value)
     );

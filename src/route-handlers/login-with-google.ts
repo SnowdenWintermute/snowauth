@@ -135,7 +135,7 @@ export async function googleOAuthResponseHandler(req: Request, res: Response, ne
       let randomUsernameAlreadyExists = true;
       while (randomUsernameAlreadyExists || username === undefined) {
         username = generateRandomUsername();
-        const existingProfile = await profilesRepo.findOne("username", username);
+        const existingProfile = await profilesRepo.findOne("username", username, true);
         randomUsernameAlreadyExists = existingProfile !== undefined;
       }
 

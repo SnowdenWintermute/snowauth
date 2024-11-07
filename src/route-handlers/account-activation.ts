@@ -36,7 +36,7 @@ export default async function accountActivationHandler(
     const hashedPassword = await argon2.hash(password, ARGON2_OPTIONS);
 
     if (existingCredentials === undefined) {
-      const existingUsername = await profilesRepo.findOne("username", username);
+      const existingUsername = await profilesRepo.findOne("username", username, true);
       if (existingUsername !== undefined)
         return next([new SnowAuthError(ERROR_MESSAGES.USER.NAME_IN_USE_OR_UNAVAILABLE, 400)]);
 

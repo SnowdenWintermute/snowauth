@@ -21,7 +21,7 @@ export default async function changeUsernameHandler(
       return next([new SnowAuthError(ERROR_MESSAGES.SERVER_GENERIC, 500)]);
     }
 
-    const existingUsername = await profilesRepo.findOne("username", newUsername);
+    const existingUsername = await profilesRepo.findOne("username", newUsername, true);
     if (existingUsername !== undefined)
       return next([new SnowAuthError(ERROR_MESSAGES.USER.NAME_IN_USE_OR_UNAVAILABLE, 400)]);
 

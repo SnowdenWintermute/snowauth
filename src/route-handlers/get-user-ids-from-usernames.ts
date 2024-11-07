@@ -12,7 +12,6 @@ export default async function getUserIdsFromUsernamesHandler(
 ) {
   try {
     const { usernames } = req.query;
-    console.log("got usernames: ", usernames);
     if (typeof usernames !== "string")
       return next([new SnowAuthError("Invalid query string", 400)]);
     const usernamesArray = usernames ? usernames.split(",") : [];
@@ -22,10 +21,10 @@ export default async function getUserIdsFromUsernamesHandler(
     for (const username of usernamesArray) {
       promises.push(
         new Promise(async (resolve, reject) => {
-          const profile = await profilesRepo.findOne("username", username);
+          const profile = await profilesRepo.findOne("username", username, true);
           if (!profile) {
             console.error(ERROR_MESSAGES.USER.MISSING_PROFILE);
-            throw new Error(ERROR_MESSAGES.USER.MISSING_PROFILE);
+            return next([new Error(ERROR_MESSAGES.USER.MISSING_PROFILE)]);
           } else {
             idsByUsername[username] = profile.userId;
             resolve();
