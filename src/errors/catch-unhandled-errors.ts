@@ -15,5 +15,6 @@ export default function catchUnhandledErrors(error: any, next: NextFunction) {
   } else if (error.message && error.status) {
     errors.push(new SnowAuthError(error.message, error.code));
   }
+  console.error(error);
   return next(errors);
 }

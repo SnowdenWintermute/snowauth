@@ -6,8 +6,10 @@ import pgPool from "./database/instantiate-wrapped-pool.js";
 import { valkeyManager } from "./kv-store/client.js";
 import { env } from "./utils/load-env-variables.js";
 import buildExpressApp from "./build-express-app.js";
+import runMigrations from "./database/run-migrations.js";
 
 const PORT = 8081;
+await runMigrations();
 sgMail.setApiKey(env.SENDGRID_API_KEY);
 pgPool.connect(pgOptions);
 valkeyManager.context.connect();

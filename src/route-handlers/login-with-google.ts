@@ -169,9 +169,9 @@ export async function googleOAuthResponseHandler(req: Request, res: Response, ne
 
 function getGoogleOAuthRedirectURI() {
   const { OAUTH } = ROUTES;
-  const productionGoogleRedirectURI = "https://roguelikeracing.com/auth";
+  const productionGoogleRedirectURI = "https://roguelikeracing.com";
   const devGoogleRedirectURI = "http://localhost:3000";
-  const googleRedirectURIPath = appRoute(OAUTH.ROOT, OAUTH.GOOGLE);
+  const googleRedirectURIPath = OAUTH.ROOT + OAUTH.GOOGLE;
   const baseRedirectURI =
     env.NODE_ENV === "production" ? productionGoogleRedirectURI : devGoogleRedirectURI;
   return baseRedirectURI + googleRedirectURIPath;

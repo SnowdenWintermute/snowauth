@@ -34,6 +34,7 @@ WORKDIR /app
 COPY package.json ./package.json
 COPY --from=builder /app/dist ./dist
 COPY --from=deployDeps /app/node_modules ./node_modules
+COPY --from=builder /app/src/database/migrations ./src/database/migrations
 
 CMD ["node", "dist/index.js"]
 

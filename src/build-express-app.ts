@@ -39,6 +39,7 @@ export default function buildExpressApp() {
   expressApp.use(cookieParser());
   const corsOrigin =
     env.NODE_ENV === "production" ? "https://roguelikeracing.com" : "http://localhost:3000";
+  console.log("cors origin set: ", corsOrigin);
   expressApp.use(
     cors({
       origin: corsOrigin,
